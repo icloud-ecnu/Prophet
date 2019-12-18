@@ -28,7 +28,7 @@ pytorch_lib = Extension('byteps.torch.c_lib', [])
 # Package meta-data.
 NAME = 'byteps'
 DESCRIPTION = 'A high-performance cross-framework Parameter Server for Deep Learning'
-URL = 'https://github.com/bytedance/byteps'
+URL = 'https://github.com/chrisqiqiang/byteps'
 EMAIL = 'lab-hr@bytedance.com'
 AUTHOR = 'Bytedance Inc.'
 REQUIRES_PYTHON = '>=2.7.0'
