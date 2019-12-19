@@ -251,13 +251,13 @@ uint32_t BytePSScheduledQueue::pendingSize() {
 }
 
 void BytePSScheduledQueue::reportFinish(int size) {
-  if (_is_scheduled) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    if (_meetzero) {
-      _dooropen = 1;
-    } else {
-      _credits += size;
-    }
+  if (_meetzero) {
+    _dooropen = 1;
+  } else {
+    if (_is_scheduled) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _credits += size;
+      }
   }
   return;
 }
