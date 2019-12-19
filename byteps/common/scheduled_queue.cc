@@ -169,7 +169,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
     if (_meetzero) {
       BPS_LOG(TRACE) << "[R] After meet zero, try " << task->tensor_name << " key: " << task->key
                    << " dooropen: " << _dooropen;
-      std::lock_guard<std::mutex> lock(_mutex);
       if (_dooropen) {
         _dooropen = 0;
       } else {
