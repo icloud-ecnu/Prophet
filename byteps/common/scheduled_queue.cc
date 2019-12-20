@@ -172,7 +172,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
      _tensor_part[ (*it) -> priority * -1]++;      
      if(_tensor_part[ (*it) -> priority * -1 ] == (*it) -> total_partnum ) //we cannot initialize the _vis and _myqueue immediately, cause some tensors may not be transferred over.
      	_tensor_num++;
-      if( !_vis[_myqueue.front()]
+      if( !_vis[_myqueue.front()])
         _myqueue.pop();// pop the firt element when the tensor first came.
       _vis[(*it) -> priority * -1] = 1;
    }
