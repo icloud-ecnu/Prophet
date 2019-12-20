@@ -60,6 +60,11 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
         _rt = BytePSGlobal::GetPushTable();
       }
       _tensor_num=0;
+      for(int i = 0;i < 160; i++)
+      {
+        _vis[i] = 0;
+        _tensor_part[i] = 0;
+      }
       for(int i = 11; i >= 0; i--)
       {
         for(int j = _grad_checkpoint[i]; j <= _middle[i];j++){
@@ -73,11 +78,6 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
             _myqueue.push(j * -1);
             BPS_LOG(DEBUG) << " PUSH element into myqueue: " << j ;
         }
-      }
-      for(int i = 0;i < 160; i++)
-      {
-        _vis[i] = 0;
-        _tensor_part[i] = 0;
       }
       break;
     case COPYH2D:
@@ -161,63 +161,65 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       _rt->ClearReadyCount((*it)->key);
     }
     std::string tmp = (*it) -> tensor_name;
-    if(_qt == PUSH && tmp.find("gradient") != tmp.npos)
-    {
-      if((*it) -> priority !=  _myqueue.front() && !_vis[(*it) -> priority * -1] && !_myqueue.empty() )
-        continue;  
-      
-      BPS_LOG(TRACE) << "tensor is getting task: " << (*it) -> priority << "   myqueue top element " << _myqueue.front();
-
-      BPS_LOG(TRACE) << "tensor_num is: " << _tensor_num << " total num is:" << (*it) -> total_partnum;    
-     _tensor_part[ (*it) -> priority * -1]++;      
-     if(_tensor_part[ (*it) -> priority * -1 ] == (*it) -> total_partnum ) //we cannot initialize the _vis and _myqueue immediately, cause some tensors may not be transferred over.
-     	_tensor_num++;
-      if( !_vis[_myqueue.front()])
-        _myqueue.pop();// pop the firt element when the tensor first came.
-      _vis[(*it) -> priority * -1] = 1;
-   }
-    task = *it;
-    _sq.erase(it);
-    if (task -> priority == 0) {
-      _meetzero = 1;
-    }
-    if (_meetzero) {
-      BPS_LOG(INFO) << "[R] After meet zero, try " << task->tensor_name << " key: " << task->key
-                   << " dooropen: " << _dooropen;
-      if (_dooropen) {
-        _dooropen = 0;
+    if(_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+      if ((*it) -> priority == 0) {
+        _meetzero = 1;
+      }
+      if (!_meetzero && !_dooropen) {
+        // before meet zero, door should always open, so show error if door is not open
+        BPS_LOG(INFO) << "[R] ERROR";
+      }
+      BPS_LOG(INFO) << "[R] try " << task->tensor_name << " key: " << task->key
+                        << " dooropen: " << _dooropen;
+      if (!_meetzero || (_meetzero && _dooropen)) {
+        if((*it) -> priority !=  _myqueue.front() && !_vis[(*it) -> priority * -1] && !_myqueue.empty()) {
+          continue;
+        }
+        _tensor_part[ ((*it) -> priority) * -1]++;      
+        if(_tensor_part[ ((*it) -> priority) * -1 ] == (*it) -> total_partnum ) {
+          //we cannot initialize the _vis and _myqueue immediately, cause some tensors may not be transferred over.
+          _tensor_num++;
+        }
+        if( !_vis[_myqueue.front()]) {
+          _myqueue.pop();// pop the firt element when the tensor first came.
+          _vis[_myqueue.front()] = 1;
+        }
+        if (_meetzero) {
+          _dooropen = 0;
+        }  
       } else {
+        // here, _door must be closed, skip
         break;
       }
-    } else {
-      if (_is_scheduled) {
-        _credits -= task->len;
+    }
+    //all push process end in this iteration , then reinitalize varibles.
+    if(_tensor_num == 157 && _myqueue.empty()) {
+      BPS_LOG(INFO) << "Clear";
+      _meetzero = 0;
+      _dooropen = 1;
+      _tensor_num = 0;
+      for(int i = 0; i < 160; i++) {
+        _tensor_part[i] = 0;
+        _vis[i] = 0;
+      }
+      for(int i = 11; i >= 0; i--){
+        for(int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
+            _myqueue.push(j * -1 );
+        }
+      }
+      for(int i = 0 ; i <= 11; i++) {
+        for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++){
+            _myqueue.push(j * -1);
+        }
       }
     }
+   }
 
-    //all push process end in this iteration , then reinitalize varibles.
-    if(_tensor_num == 157 && _myqueue.empty())
-    {
-       _meetzero = 0;
-       _dooropen = 1;
-       _tensor_num = 0;
-       for(int i = 0; i < 160; i++)_tensor_part[i] = 0;
-       for(int i = 0;i < 160; i++) _vis[i] = 0;
-  
-      for(int i = 11; i >= 0; i--)
-      {
-        for(int j = _grad_checkpoint[i]; j <= _middle[i];j++){
-            _myqueue.push(j * -1 );
-            //BPS_LOG(INFO) << " PUSH element into myqueue: " << _grad_checkpoint[i] + j ;
-        }
-      }
-      for(int i = 0 ; i <= 11; i++)
-      {
-        for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1] ; j++){
-            _myqueue.push(j * -1);
-            //BPS_LOG(INFO) << " PUSH element into myqueue: " << j ;
-        }
-      }
+    task = *it;
+    _sq.erase(it);
+
+    if (_is_scheduled) {
+      _credits -= task->len;
     }
 
     BPS_CHECK(task->tensor_name != "");
