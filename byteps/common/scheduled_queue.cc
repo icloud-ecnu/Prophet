@@ -143,7 +143,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   // TODO: below can be optimized -- if we take task from the tail, erase() can
   // be faster
-  BPS_LOG(INFO) << "IN GET TASK";
   for (auto it = _sq.begin(); it != _sq.end(); ++it) {
     if ((*it)->ready_event) {
       if (!(*it)->ready_event->Ready()) {
