@@ -173,7 +173,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       BPS_LOG(INFO) << "try " << task->tensor_name << " dooropen: " << _dooropen;
       if (!_meetzero || (_meetzero && _dooropen)) {
         if(task -> priority !=  _myqueue.front() && !_vis[task -> priority * -1] && !_myqueue.empty()) {
-          BPS_LOG(INFO) << task -> priority << "is not equal to" << _myqueue.front() << ", continue.";
+          BPS_LOG(INFO) << task -> priority << " is not equal to " << _myqueue.front() << ", continue.";
           continue;
         }
         _tensor_part[ (task -> priority) * -1]++;      
@@ -182,8 +182,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           _tensor_num++;
         }
         if( !_vis[_myqueue.front() * -1]) {
-          _myqueue.pop();// pop the firt element when the tensor first came.
           _vis[_myqueue.front() * -1] = 1;
+          _myqueue.pop();// pop the firt element when the tensor first came.
         }
         if (_meetzero) {
           BPS_LOG(INFO) << "close door";
