@@ -191,29 +191,28 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         // here, _door must be closed, skip
         break;
       }
-    }
-    //all push process end in this iteration , then reinitalize varibles.
-    if(_tensor_num == 157 && _myqueue.empty()) {
-      BPS_LOG(INFO) << "Clear";
-      _meetzero = 0;
-      _dooropen = 1;
-      _tensor_num = 0;
-      for(int i = 0; i < 160; i++) {
-        _tensor_part[i] = 0;
-        _vis[i] = 0;
-      }
-      for(int i = 11; i >= 0; i--){
-        for(int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
-            _myqueue.push(j * -1 );
+      //all push process end in this iteration , then reinitalize varibles.
+      if(_tensor_num == 157 && _myqueue.empty()) {
+        BPS_LOG(INFO) << "Clear";
+        _meetzero = 0;
+        _dooropen = 1;
+        _tensor_num = 0;
+        for(int i = 0; i < 160; i++) {
+          _tensor_part[i] = 0;
+          _vis[i] = 0;
+        }
+        for(int i = 11; i >= 0; i--){
+          for(int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
+              _myqueue.push(j * -1 );
+          }
+        }
+        for(int i = 0 ; i <= 11; i++) {
+          for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++){
+              _myqueue.push(j * -1);
+          }
         }
       }
-      for(int i = 0 ; i <= 11; i++) {
-        for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++){
-            _myqueue.push(j * -1);
-        }
-      }
     }
-   }
 
     task = *it;
     _sq.erase(it);
