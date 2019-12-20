@@ -143,6 +143,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   // TODO: below can be optimized -- if we take task from the tail, erase() can
   // be faster
+  BPS_LOG(INFO) << "IN GET TASK";
   for (auto it = _sq.begin(); it != _sq.end(); ++it) {
     if ((*it)->ready_event) {
       if (!(*it)->ready_event->Ready()) {
@@ -191,27 +192,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         // here, _door must be closed, skip
         break;
       }
-      //all push process end in this iteration , then reinitalize varibles.
-      if(_tensor_num == 157 && _myqueue.empty()) {
-        BPS_LOG(INFO) << "Clear";
-        _meetzero = 0;
-        _dooropen = 1;
-        _tensor_num = 0;
-        for(int i = 0; i < 160; i++) {
-          _tensor_part[i] = 0;
-          _vis[i] = 0;
-        }
-        for(int i = 11; i >= 0; i--){
-          for(int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
-              _myqueue.push(j * -1 );
-          }
-        }
-        for(int i = 0 ; i <= 11; i++) {
-          for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++){
-              _myqueue.push(j * -1);
-          }
-        }
-      }
     }
 
     task = *it;
@@ -219,6 +199,28 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
 
     if (_is_scheduled) {
       _credits -= task->len;
+    }
+
+    //all push process end in this iteration , then reinitalize varibles.
+    if(_tensor_num == 157 && _myqueue.empty()) {
+      BPS_LOG(INFO) << "Clear";
+      _meetzero = 0;
+      _dooropen = 1;
+      _tensor_num = 0;
+      for(int i = 0; i < 160; i++) {
+        _tensor_part[i] = 0;
+        _vis[i] = 0;
+      }
+      for(int i = 11; i >= 0; i--){
+        for(int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
+            _myqueue.push(j * -1 );
+        }
+      }
+      for(int i = 0 ; i <= 11; i++) {
+        for(int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++){
+            _myqueue.push(j * -1);
+        }
+      }
     }
 
     BPS_CHECK(task->tensor_name != "");
