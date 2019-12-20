@@ -170,10 +170,10 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         // before meet zero, door should always open, so show error if door is not open
         BPS_LOG(INFO) << "[R] ERROR";
       }
-      BPS_LOG(INFO) << "[R] try " << task->tensor_name << " key: " << task->key
-                        << " dooropen: " << _dooropen;
+      BPS_LOG(INFO) << "try " << task->tensor_name << " dooropen: " << _dooropen;
       if (!_meetzero || (_meetzero && _dooropen)) {
         if(task -> priority !=  _myqueue.front() && !_vis[task -> priority * -1] && !_myqueue.empty()) {
+          BPS_LOG(INFO) << task -> priority << "is not equal to" << _myqueue.front() << ", continue.";
           continue;
         }
         _tensor_part[ (task -> priority) * -1]++;      
@@ -181,15 +181,17 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           //we cannot initialize the _vis and _myqueue immediately, cause some tensors may not be transferred over.
           _tensor_num++;
         }
-        if( !_vis[_myqueue.front()]) {
+        if( !_vis[_myqueue.front() * -1]) {
           _myqueue.pop();// pop the firt element when the tensor first came.
-          _vis[_myqueue.front()] = 1;
+          _vis[_myqueue.front() * -1] = 1;
         }
         if (_meetzero) {
+          BPS_LOG(INFO) << "close door";
           _dooropen = 0;
         }  
       } else {
         // here, _door must be closed, skip
+        BPS_LOG(INFO) << "door is closed, skip";
         break;
       }
       //all push process end in this iteration , then reinitalize varibles.
@@ -270,6 +272,7 @@ uint32_t BytePSScheduledQueue::pendingSize() {
 void BytePSScheduledQueue::reportFinish(int size) {
   std::lock_guard<std::mutex> lock(_mutex);
   if (_meetzero) {
+    BPS_LOG(INFO) << "door open again";
     _dooropen = 1;
   } else {
     if (_is_scheduled) {
