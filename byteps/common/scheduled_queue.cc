@@ -176,7 +176,7 @@ namespace byteps {
                                 BPS_LOG(INFO) << task->tensor_name << " pushed.";
                                 _prepared.push_back(*it);
                                 _sq.erase(it);
-                                while (it != _sq.end() && (*it)->priority != task->priotity) {
+                                while (it != _sq.end() && (*it)->priority != task->priority) {
                                     it++;
                                 }
                             }
