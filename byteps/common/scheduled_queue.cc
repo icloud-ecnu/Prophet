@@ -156,7 +156,6 @@ namespace byteps {
                 task = *it;
                 std::string tmp = task->tensor_name;
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
-                  BPS_LOG(INFO) << "push gradient: " << tmp << " _prepared is empty or not: " << _prepared.empty() << " size: " << _prepared.size(); 
                   if (_rest_part == 0) {
                         if (task->priority == 0) {
                             _meetzero = 1;
@@ -169,7 +168,7 @@ namespace byteps {
                             }
                             _rest_part = task->total_partnum - 1;
                             _last_priority = task -> priority;
-                            BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
+                            BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
                             if (_rest_part == 0) {
                               _tensor_num++;
                             }
@@ -196,7 +195,7 @@ namespace byteps {
                     }
                   }
               //all push process end in this iteration , then reinitalize varibles.
-                if (_tensor_num == 157 && _myqueue.empty() && _prepared.empty()) {
+                if (_tensor_num == 157 && _myqueue.empty()) {
                     BPS_LOG(INFO) << "Clear";
                     _meetzero = 0;
                     _dooropen = 1;
