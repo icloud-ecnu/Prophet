@@ -136,9 +136,7 @@ namespace byteps {
             std::shared_ptr<TensorTableEntry> task;
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-            int x = 1;
-            for (auto it = _sq.begin(); it != _sq.end(); it = it + x) {
-                x = 1;
+            for (auto it = _sq.begin(); it != _sq.end(); it++) {
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
                         continue;
@@ -163,10 +161,6 @@ namespace byteps {
                         if (task->priority == 0) {
                             _meetzero = 1;
                         }
-                        // if (!_meetzero && !_dooropen) {
-                        //     // before meet zero, door should always open, so show error if door is not open
-                        //     // BPS_LOG(INFO) << "[R] ERROR";
-                        // }
                         // BPS_LOG(INFO) << "try " << task->tensor_name << " dooropen: " << _dooropen;
                         if (!_meetzero || (_meetzero && _dooropen)) {
                             if (task->priority != _myqueue.front()) {
@@ -176,12 +170,12 @@ namespace byteps {
                             int parts = task->total_partnum;
                             BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
                             while (parts--) {
-                                BPS_LOG(INFO) << task->tensor_name << " pushed.";
+                                BPS_LOG(INFO) << (*it)->tensor_name << " pushed.";
                                 _prepared.push_back(*it);
                                 _sq.erase(it);
-                                while (it != _sq.end() && (*it)->priority != task->priority) {
+                                do {
                                     it++;
-                                }
+                                } while (it != _sq.end() && (*it)->priority != task->priority);
                             }
                             BPS_LOG(INFO) << "my prepared queue has elements: " << _prepared.size();
                             task = *(_prepared.begin());
@@ -205,7 +199,6 @@ namespace byteps {
                         task = *(_prepared.begin());
                         _prepared.erase(_prepared.begin());
                         BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
-                        x = 0;
                         //return task;
                     }
               //all push process end in this iteration , then reinitalize varibles.
