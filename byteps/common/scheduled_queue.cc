@@ -180,8 +180,10 @@ namespace byteps {
                                     it++;
                                 }
                             }
+                            BPS_LOG(INFO) << "my prepared queue has elements: " << _prepared.size();
                             task = *(_prepared.begin());
                             _prepared.erase(_prepared.begin());
+                            BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
                             _tensor_num++;
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
@@ -212,7 +214,7 @@ namespace byteps {
                     }
 
 
-                    _sq.erase(it);
+                   // _sq.erase(it);
 
                     if (_is_scheduled) {
                         _credits -= task->len;
@@ -231,6 +233,7 @@ namespace byteps {
             } else {
                 task = *(_prepared.begin());
                 _prepared.erase(_prepared.begin());
+                BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
                 return task;
             }
         }
