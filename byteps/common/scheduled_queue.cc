@@ -134,29 +134,29 @@ namespace byteps {
         std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard<std::mutex> lock(_mutex);
             std::shared_ptr<TensorTableEntry> task;
-            if (_prepared.empty()) {
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-                for (auto it = _sq.begin(); it != _sq.end(); ++it) {
-                    if ((*it)->ready_event) {
-                        if (!(*it)->ready_event->Ready()) {
-                            continue;
-                        }
+            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+                if ((*it)->ready_event) {
+                    if (!(*it)->ready_event->Ready()) {
+                        continue;
                     }
-                    if (_is_scheduled) {
-                        if ((*it)->len > _credits) {
-                            continue;
-                        }
+                }
+                if (_is_scheduled) {
+                    if ((*it)->len > _credits) {
+                        continue;
                     }
-                    if (_rt) {
-                        if (!_rt->IsKeyReady((*it)->key)) {
-                            continue;
-                        }
-                        _rt->ClearReadyCount((*it)->key);
+                }
+                if (_rt) {
+                    if (!_rt->IsKeyReady((*it)->key)) {
+                        continue;
                     }
-                    task = *it;
-                    std::string tmp = task->tensor_name;
-                    if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+                    _rt->ClearReadyCount((*it)->key);
+                }
+                task = *it;
+                std::string tmp = task->tensor_name;
+                if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+                  if (_prepared.empty()) {
                         if (task->priority == 0) {
                             _meetzero = 1;
                         }
@@ -189,54 +189,58 @@ namespace byteps {
                                 //BPS_LOG(INFO) << "close door";
                                 _dooropen = 0;
                             }
-                        } else {
+                        }
+                        else {
                             // here, _door must be closed, skip
                             //BPS_LOG(INFO) << "door is closed, skip";
                             break;
                         }
-                        //all push process end in this iteration , then reinitalize varibles.
-                        if (_tensor_num == 157 && _myqueue.empty()) {
-                            BPS_LOG(INFO) << "Clear";
-                            _meetzero = 0;
-                            _dooropen = 1;
-                            _tensor_num = 0;
-                            for (int i = 11; i >= 0; i--) {
-                                for (int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
-                                    _myqueue.push(j * -1);
-                                }
-                            }
-                            for (int i = 0; i <= 11; i++) {
-                                for (int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++) {
-                                    _myqueue.push(j * -1);
-                                }
-                            }
+                   // return task;
+                }
+                else {
+                      task = *(_prepared.begin());
+                      _prepared.erase(_prepared.begin());
+                      BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
+                      //return task;
+                  }
+              //all push process end in this iteration , then reinitalize varibles.
+                if (_tensor_num == 157 && _myqueue.empty() && _prepared.empty()) {
+                    BPS_LOG(INFO) << "Clear";
+                    _meetzero = 0;
+                    _dooropen = 1;
+                    _tensor_num = 0;
+                    for (int i = 11; i >= 0; i--) {
+                        for (int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
+                            _myqueue.push(j * -1);
                         }
                     }
-
-
-                   // _sq.erase(it);
-
-                    if (_is_scheduled) {
-                        _credits -= task->len;
+                    for (int i = 0; i <= 11; i++) {
+                        for (int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++) {
+                            _myqueue.push(j * -1);
+                        }
                     }
-
-                    BPS_CHECK(task->tensor_name != "");
-                    BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
-                                   << " getTask: " << task->tensor_name << " key: " << task->key
-                                   << " rank: " << BytePSGlobal::GetLocalRank();
-                    task->ready_event = nullptr;
-                    // Add for profiling communication traces
-                    recorderTs(task);
-                    return task;
                 }
-                return nullptr;
-            } else {
-                task = *(_prepared.begin());
-                _prepared.erase(_prepared.begin());
-                BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
+                task->ready_event = nullptr;
+                recorderTs(task);
                 return task;
             }
-        }
+          _sq.erase(it);
+
+          if (_is_scheduled) {
+              _credits -= task->len;
+          }
+
+          BPS_CHECK(task->tensor_name != "");
+          BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+                          << " getTask: " << task->tensor_name << " key: " << task->key
+                          << " rank: " << BytePSGlobal::GetLocalRank();
+          task->ready_event = nullptr;
+          // Add for profiling communication traces
+          recorderTs(task);
+          return task;
+      }
+      return nullptr;
+  }
 
 
         std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
