@@ -169,10 +169,14 @@ namespace byteps {
                             }
                             int parts = task->total_partnum;
                             BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
-                            while (parts--) {
+                            while (parts > 0) {
                                 BPS_LOG(INFO) << (*it)->tensor_name << " pushed.";
                                 _prepared.push_back(*it);
                                 _sq.erase(it);
+                                parts--;
+                                if (parts == 0) {
+                                  break;
+                                }
                                 do {
                                     it++;
                                 } while (it != _sq.end() && (*it)->priority != task->priority);
