@@ -174,15 +174,14 @@ namespace byteps {
                             BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
                             while (parts--) {
                                 BPS_LOG(INFO) << task->tensor_name << " pushed.";
-                                _prepared.push_back(task);
-                                _sq.erase(task);
+                                _prepared.push_back(it);
+                                _sq.erase(it);
                                 while (it != _sq.end() && (*it)->priority != task->priotity) {
                                     it++;
                                 }
-                                task = *it;
                             }
-                            task = _prepared.font();
-                            _prepared.erase(task);
+                            task = *(_prepared.font());
+                            _prepared.erase(_prepared.front());
                             _tensor_num++;
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
@@ -230,8 +229,8 @@ namespace byteps {
                 }
                 return nullptr;
             } else {
-                task = _prepared.front();
-                _prepared.erase(task);
+                task = *(_prepared.font());
+                _prepared.erase(_prepared.front());
                 return task;
             }
         }
