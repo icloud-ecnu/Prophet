@@ -180,8 +180,8 @@ namespace byteps {
                                     it++;
                                 }
                             }
-                            task = *(_prepared.font());
-                            _prepared.erase(_prepared.front());
+                            task = *(_prepared.begin());
+                            _prepared.erase(_prepared.begin());
                             _tensor_num++;
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
@@ -229,8 +229,8 @@ namespace byteps {
                 }
                 return nullptr;
             } else {
-                task = *(_prepared.font());
-                _prepared.erase(_prepared.front());
+                task = *(_prepared.begin());
+                _prepared.erase(_prepared.begin());
                 return task;
             }
         }
