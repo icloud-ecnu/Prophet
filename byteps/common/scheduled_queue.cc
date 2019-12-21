@@ -157,7 +157,7 @@ namespace byteps {
                 std::string tmp = task->tensor_name;
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
                   BPS_LOG(INFO) << "push gradient: " << tmp << " _prepared is empty or not: " << _prepared.empty() << " size: " << _prepared.size(); 
-                  if (_prepared.empty()) {
+                  if (_rest_part == 0) {
                         if (task->priority == 0) {
                             _meetzero = 1;
                         }
@@ -167,28 +167,12 @@ namespace byteps {
                                 // BPS_LOG(INFO) << task -> priority << " is not equal to " << _myqueue.front() << ", continue.";
                                 continue;
                             }
-                            int parts = task->total_partnum;
+                            _rest_part = task->total_partnum - 1;
+                            _last_priority = task -> priority;
                             BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
-                            do {
-                              BPS_LOG(INFO) << (*it)->tensor_name << " pushed.";
-                              _prepared.push_back(*it);
-                              BPS_LOG(INFO) << "before erase: " << _sq.size();
-                              for (auto xx = _sq.begin(); xx != _sq.end(); ++xx) {
-                                BPS_LOG(INFO) << (*xx) -> tensor_name;
-                              }
-                              _sq.erase(it);
-                              BPS_LOG(INFO) << "after erase: " << _sq.size();
-                              for (auto xx = _sq.begin(); xx != _sq.end(); ++xx) {
-                                BPS_LOG(INFO) << (*xx) -> tensor_name;
-                              }
-                              parts--;
-                              BPS_LOG(INFO) << "it++, finding: " << (*it)->tensor_name;
-                            } while (parts > 0 && it != _sq.end() && (*it)->priority != task->priority);
-                            BPS_LOG(INFO) << "my prepared queue has elements: " << _prepared.size();
-                            task = *(_prepared.begin());
-                            _prepared.erase(_prepared.begin());
-                            BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
-                            _tensor_num++;
+                            if (_rest_part == 0) {
+                              _tensor_num++;
+                            }
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
                                 _dooropen = 0;
@@ -201,13 +185,16 @@ namespace byteps {
                         }
                    // return task;
                    _myqueue.pop();
-                  }
-                  else {
-                        task = *(_prepared.begin());
-                        _prepared.erase(_prepared.begin());
-                        BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
-                        //return task;
+                  } else {
+                    if (task->priority != _last_priority) {
+                      continue;
+                    } else {
+                      _rest_part--;
+                      if (_rest_part == 0) {
+                        _tensor_num++;
+                      }
                     }
+                  }
               //all push process end in this iteration , then reinitalize varibles.
                 if (_tensor_num == 157 && _myqueue.empty() && _prepared.empty()) {
                     BPS_LOG(INFO) << "Clear";
