@@ -156,14 +156,15 @@ namespace byteps {
                 task = *it;
                 std::string tmp = task->tensor_name;
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+                  BPS_LOG(INFO) << "push gradient: " << tmp << " _prepared is empty or not: " << _prepared.empty() << " size: " << _prepared.size(); 
                   if (_prepared.empty()) {
                         if (task->priority == 0) {
                             _meetzero = 1;
                         }
-                        if (!_meetzero && !_dooropen) {
-                            // before meet zero, door should always open, so show error if door is not open
-                            // BPS_LOG(INFO) << "[R] ERROR";
-                        }
+                        // if (!_meetzero && !_dooropen) {
+                        //     // before meet zero, door should always open, so show error if door is not open
+                        //     // BPS_LOG(INFO) << "[R] ERROR";
+                        // }
                         // BPS_LOG(INFO) << "try " << task->tensor_name << " dooropen: " << _dooropen;
                         if (!_meetzero || (_meetzero && _dooropen)) {
                             if (task->priority != _myqueue.front()) {
@@ -196,13 +197,13 @@ namespace byteps {
                             break;
                         }
                    // return task;
-                }
-                else {
-                      task = *(_prepared.begin());
-                      _prepared.erase(_prepared.begin());
-                      BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
-                      //return task;
                   }
+                  else {
+                        task = *(_prepared.begin());
+                        _prepared.erase(_prepared.begin());
+                        BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
+                        //return task;
+                    }
               //all push process end in this iteration , then reinitalize varibles.
                 if (_tensor_num == 157 && _myqueue.empty() && _prepared.empty()) {
                     BPS_LOG(INFO) << "Clear";
