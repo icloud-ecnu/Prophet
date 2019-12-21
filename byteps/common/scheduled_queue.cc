@@ -174,7 +174,6 @@ namespace byteps {
                               _sq.erase(it);
                               parts--;
                               BPS_LOG(INFO) << (*it)->tensor_name << " pushed.";
-                              it++;
                               BPS_LOG(INFO) << "it++, finding: " << (*it)->tensor_name;
                             } while (parts > 0 && it != _sq.end() && (*it)->priority != task->priority);
                             BPS_LOG(INFO) << "my prepared queue has elements: " << _prepared.size();
