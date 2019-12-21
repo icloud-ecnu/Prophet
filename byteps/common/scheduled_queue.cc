@@ -136,7 +136,9 @@ namespace byteps {
             std::shared_ptr<TensorTableEntry> task;
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+            int x = 1;
+            for (auto it = _sq.begin(); it != _sq.end(); it = it + x) {
+                x = 1;
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
                         continue;
@@ -203,6 +205,7 @@ namespace byteps {
                         task = *(_prepared.begin());
                         _prepared.erase(_prepared.begin());
                         BPS_LOG(INFO) << "Erase: my prepared queue has elements: " << _prepared.size();
+                        x = 0;
                         //return task;
                     }
               //all push process end in this iteration , then reinitalize varibles.
