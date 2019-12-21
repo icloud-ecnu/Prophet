@@ -170,10 +170,18 @@ namespace byteps {
                             int parts = task->total_partnum;
                             BPS_LOG(INFO) << task->tensor_name << " has " << parts << " parts.";
                             do {
-                              _prepared.push_back(*it);
-                              _sq.erase(it);
-                              parts--;
                               BPS_LOG(INFO) << (*it)->tensor_name << " pushed.";
+                              _prepared.push_back(*it);
+                              BPS_LOG(INFO) << "before erase: " << _sq.size();
+                              for (auto xx = _sq.begin(); xx != _sq.end(); ++xx) {
+                                BPS_LOG(INFO) << (*xx) -> tensor_name;
+                              }
+                              _sq.erase(it);
+                              BPS_LOG(INFO) << "after erase: " << _sq.size();
+                              for (auto xx = _sq.begin(); xx != _sq.end(); ++xx) {
+                                BPS_LOG(INFO) << (*xx) -> tensor_name;
+                              }
+                              parts--;
                               BPS_LOG(INFO) << "it++, finding: " << (*it)->tensor_name;
                             } while (parts > 0 && it != _sq.end() && (*it)->priority != task->priority);
                             BPS_LOG(INFO) << "my prepared queue has elements: " << _prepared.size();
