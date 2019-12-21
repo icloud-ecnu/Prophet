@@ -197,6 +197,7 @@ namespace byteps {
                             break;
                         }
                    // return task;
+                   _myqueue.pop();
                   }
                   else {
                         task = *(_prepared.begin());
