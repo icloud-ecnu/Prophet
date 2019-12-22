@@ -90,19 +90,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
             std::lock_guard<std::mutex> lock(_mutex);
-            _sq.push_back(entry);
-            if (_is_scheduled) {
-                // TODO: below can be optimized to O(n) using insertion sort
-                std::sort(
-                        _sq.begin(), _sq.end(),
-                        [](std::shared_ptr<TensorTableEntry> a,
-                           std::shared_ptr<TensorTableEntry> b) {
-                            if (a->priority == b->priority) {
-                                return (a->key < b->key);  // from the first partition to the last
-                            }
-                            return (a->priority > b->priority);  // from higher priority to lower
-                        });
-            }
+            _sq.push(entry);
             BPS_CHECK(entry->tensor_name != "");
             BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
                            << " addTask: " << entry->tensor_name << " key: " << entry->key
@@ -136,41 +124,36 @@ namespace byteps {
             std::shared_ptr<TensorTableEntry> task;
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-            for (auto it = _sq.begin(); it != _sq.end(); it++) {
-                if ((*it)->ready_event) {
-                    if (!(*it)->ready_event->Ready()) {
-                        continue;
+                auto task = _sq.top();
+                _sq.pop();
+                if (task->ready_event) {
+                    if (!task->ready_event->Ready()) {
+                        return nullptr;
                     }
                 }
                 if (_is_scheduled) {
-                    if ((*it)->len > _credits) {
-                        continue;
+                    if (task)->len > _credits) {
+                        return nullptr;
                     }
                 }
                 if (_rt) {
-                    if (!_rt->IsKeyReady((*it)->key)) {
-                        continue;
+                    if (!_rt->IsKeyReady(task->key)) {
+                        return nullptr;
                     }
-                    _rt->ClearReadyCount((*it)->key);
+                    _rt->ClearReadyCount(task->key);
                 }
-                task = *it;
                 std::string tmp = task->tensor_name;
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
                   if (_rest_part == 0) {
                         if (task->priority == 0) {
                             _meetzero = 1;
                         }
-                        // BPS_LOG(INFO) << "try " << task->tensor_name << " dooropen: " << _dooropen;
                         if (!_meetzero || (_meetzero && _dooropen)) {
-                            if (task->priority != _myqueue.front()) {
-                                // BPS_LOG(INFO) << task -> priority << " is not equal to " << _myqueue.front() << ", continue.";
-                                continue;
-                            }
                             _rest_part = task->total_partnum - 1;
-                            _last_priority = task -> priority;
                             BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
                             if (_rest_part == 0) {
                               _tensor_num++;
+                              BPS_LOG(INFO) << _tensor_num << " done.;
                             }
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
@@ -183,16 +166,13 @@ namespace byteps {
                             break;
                         }
                    // return task;
-                   _myqueue.pop();
                   } else {
-                    if (task->priority != _last_priority) {
-                      continue;
-                    } else {
                       _rest_part--;
+                      BPS_LOG(INFO) << task->tensor_name << " still has " << _rest_part << " parts left.";
                       if (_rest_part == 0) {
                         _tensor_num++;
+                          BPS_LOG(INFO) << _tensor_num << " done.;
                       }
-                    }
                   }
               //all push process end in this iteration , then reinitalize varibles.
                 if (_tensor_num == 157 && _myqueue.empty()) {
@@ -200,22 +180,11 @@ namespace byteps {
                     _meetzero = 0;
                     _dooropen = 1;
                     _tensor_num = 0;
-                    for (int i = 11; i >= 0; i--) {
-                        for (int j = _grad_checkpoint[i]; j <= _middle[i]; j++) {
-                            _myqueue.push(j * -1);
-                        }
-                    }
-                    for (int i = 0; i <= 11; i++) {
-                        for (int j = _middle[i] + 1; j < _grad_checkpoint[i + 1]; j++) {
-                            _myqueue.push(j * -1);
-                        }
-                    }
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
             }
-          _sq.erase(it);
 
           if (_is_scheduled) {
               _credits -= task->len;
@@ -229,7 +198,6 @@ namespace byteps {
           // Add for profiling communication traces
           recorderTs(task);
           return task;
-      }
       return nullptr;
   }
 
