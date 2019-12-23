@@ -222,10 +222,10 @@ namespace byteps {
             while(!_sq.empty())
             {
               task = _sq.top();
-              if ((*it)->ready_event) {
+              if (task ->ready_event) {
                     BPS_CHECK((*it)->ready_event->Ready());
                 }
-                if ((*it)->key != (uint64_t) key) {
+                if (task ->key != (uint64_t) key) {
                     continue;
                 }
                 _sq.pop();
