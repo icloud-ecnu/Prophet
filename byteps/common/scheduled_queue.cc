@@ -221,14 +221,14 @@ namespace byteps {
             //     _sq.erase(it);
             while(!_sq.empty())
             {
-              task = _sq.top()
+              task = _sq.top();
               if ((*it)->ready_event) {
                     BPS_CHECK((*it)->ready_event->Ready());
                 }
                 if ((*it)->key != (uint64_t) key) {
                     continue;
                 }
-                _sq.pop()
+                _sq.pop();
             }
             BPS_CHECK(task->tensor_name != "");
               BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
