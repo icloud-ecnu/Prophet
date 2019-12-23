@@ -125,7 +125,7 @@ namespace byteps {
             std::shared_ptr<TensorTableEntry> task;
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-      while(!_sq.empty())
+      while(_sq.empty())
       {
                 task = _sq.top();
                 if (task->ready_event) {
@@ -229,7 +229,7 @@ namespace byteps {
             //     }
             //     task = *it;
             //     _sq.erase(it);
-            while(!_sq.empty())
+            while(_sq.empty())
             {
               task = _sq.top();
               if (task ->ready_event) {
