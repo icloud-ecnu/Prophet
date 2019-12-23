@@ -125,7 +125,7 @@ namespace byteps {
             std::shared_ptr<TensorTableEntry> task;
                 // TODO: below can be optimized -- if we take task from the tail, erase() can
                 // be faster
-      while(_sq.empty())
+      while(!_sq.empty())
       {
                 task = _sq.top();
                 if (task->ready_event) {
@@ -155,7 +155,8 @@ namespace byteps {
                             // if(task -> priority == _myqueue.front()){
                             //      _myqueue.pop();
                             // }
-                            if(task -> priority != _myqueue.front()) continue;
+                            BPS_LOG(INFO) << "INTO First occurance: " << "task is " << task -> tensor_name << "  _myqueue front is: " << _myqueue.front() ;
+                            if(task -> priority != _myqueue.front()) return nullptr;
                             _rest_part = task->total_partnum - 1;
                             BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
                             if (_rest_part == 0) {
@@ -229,7 +230,7 @@ namespace byteps {
             //     }
             //     task = *it;
             //     _sq.erase(it);
-            while(_sq.empty())
+            while(!_sq.empty())
             {
               task = _sq.top();
               if (task ->ready_event) {
