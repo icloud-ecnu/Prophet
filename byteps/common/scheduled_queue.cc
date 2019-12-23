@@ -229,7 +229,6 @@ namespace byteps {
                     continue;
                 }
                 _sq.pop();
-            }
             BPS_CHECK(task->tensor_name != "");
               BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
                               << " getTask(key): " << task->tensor_name
