@@ -223,7 +223,7 @@ namespace byteps {
             {
               task = _sq.top();
               if (task ->ready_event) {
-                    BPS_CHECK((*it)->ready_event->Ready());
+                    BPS_CHECK(task ->ready_event->Ready());
                 }
                 if (task ->key != (uint64_t) key) {
                     continue;
