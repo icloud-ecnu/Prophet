@@ -27,6 +27,11 @@
 #include "global.h"
 #include "logging.h"
 
+
+
+namespace byteps {
+namespace common {
+
 struct comparator {
     bool operator()(std::shared_ptr<TensorTableEntry> a,
                     std::shared_ptr<TensorTableEntry> b) {
@@ -37,8 +42,6 @@ struct comparator {
     }
 };
 
-namespace byteps {
-namespace common {
 
 class BytePSScheduledQueue {
  public:
