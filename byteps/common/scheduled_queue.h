@@ -24,13 +24,6 @@
 #include "common.h"
 #include "ready_table.h"
 
-
-
-
-
-namespace byteps {
-namespace common {
-
 struct comparator {
     bool operator()(std::shared_ptr<TensorTableEntry> a,
                     std::shared_ptr<TensorTableEntry> b) {
@@ -41,6 +34,8 @@ struct comparator {
     }
 };
 
+namespace byteps {
+namespace common {
 
 class BytePSScheduledQueue {
  public:
