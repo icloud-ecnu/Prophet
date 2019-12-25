@@ -25,55 +25,75 @@
 #include "ready_table.h"
 
 namespace byteps {
-namespace common {
+    namespace common {
 
-class BytePSScheduledQueue {
- public:
-  BytePSScheduledQueue(QueueType type);
-  QueueType getQueueType() { return _qt; }
-  void addTask(std::shared_ptr<TensorTableEntry>);
-  void recorderTs(std::shared_ptr<TensorTableEntry>);
-  std::shared_ptr<TensorTableEntry> getTask();
-  std::shared_ptr<TensorTableEntry> getTask(uint64_t key);
-  uint32_t pendingSize();
-  void reportFinish(int size);
+        class BytePSScheduledQueue {
+        public:
+            BytePSScheduledQueue(QueueType type);
 
- private:
-  // TODO: use priority queue or heap
-  std::vector<std::shared_ptr<TensorTableEntry>> _sq;
-  std::vector<std::shared_ptr<TensorTableEntry>> _mysq;
-  //add  myqueue to control addtask process.
-  std::stack<int> _mystack;
-  std::stack<int> _mystackpull;
-  std::mutex _mutex;
-  uint64_t _credits;
-  // uint64_t _pull_forward_size;
-  // uint64_t _pull_backward_size;
-  // uint64_t _pull_credits;
-  bool _is_scheduled;
-  // int _tensor_part[160] = {0};//log every transferred tensor part
-  // int _tensor_num = 0; //log the number of transferred tensor.
-  // int _vis[160] = {0};
-  int _meetzero = 0;
-  int _dooropen = 11;  
-  // int _grad_checkpoint[13] = {0,10,23,36,51,63,78,91,104,118,131,144,157};
-  int _grad_checkpoint[13] = {-1,9,22,35,50,62,77,90,103,117,130,143,156};
-  int _execution[13] = {2670000,2880000,1840000,2040000,2630000,3240000,2750000,3790000,5080000,4390000,3450000,2500000,0};
-  int _sizepointer = 0;
-  int _dequeue = 0;
-  int _restpart = 0;
-  int _pointer = 12;
-  int _stagestart = 1;
-  int dynamic_size ;
-  // int _middle[12] = {5,22,35,50,62,68,84,95,108,130,135,147};
-  // int _middle[12] = {5,16,28,40,55,65,80,93,106,120,135,147};
+            QueueType getQueueType() { return _qt; }
 
+            void addTask(std::shared_ptr <TensorTableEntry>);
 
+            void recorderTs(std::shared_ptr <TensorTableEntry>);
 
-  QueueType _qt;
-  ReadyTable *_rt;
-};
-}  // namespace common
+            std::shared_ptr <TensorTableEntry> getTask();
+
+            std::shared_ptr <TensorTableEntry> getTask(uint64_t key);
+
+            uint32_t pendingSize();
+
+            void reportFinish(int size);
+
+        private:
+            struct comparator {
+                bool operator()(std::shared_ptr <TensorTableEntry> a,
+                                std::shared_ptr <TensorTableEntry> b) {
+                    if (a->priority == b->priority) {
+                        return (a->key < b->key);  // from the first partition to the last
+                    }
+                    return (a->priority > b->priority);  // from higher priority to lower
+                }
+            };
+
+            // TODO: use priority queue or heap
+            std::vector <std::shared_ptr<TensorTableEntry>> _sq;
+            std::priority_queue <std::shared_ptr<TensorTableEntry>, std::vector<
+                    std::shared_ptr < TensorTableEntry>>, comparator>
+            pq;
+            std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
+            //add  myqueue to control addtask process.
+            std::stack<int> _mystack;
+            std::stack<int> _mystackpull;
+            std::mutex _mutex;
+            uint64_t _credits;
+            // uint64_t _pull_forward_size;
+            // uint64_t _pull_backward_size;
+            // uint64_t _pull_credits;
+            bool _is_scheduled;
+            // int _tensor_part[160] = {0};//log every transferred tensor part
+            // int _tensor_num = 0; //log the number of transferred tensor.
+            // int _vis[160] = {0};
+            int _meetzero = 0;
+            int _dooropen = 11;
+            // int _grad_checkpoint[13] = {0,10,23,36,51,63,78,91,104,118,131,144,157};
+            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
+            int _execution[13] = {2670000, 2880000, 1840000, 2040000, 2630000, 3240000, 2750000, 3790000, 5080000,
+                                  4390000, 3450000, 2500000, 0};
+            int _sizepointer = 0;
+            int _dequeue = 0;
+            int _restpart = 0;
+            int _pointer = 12;
+            int _stagestart = 1;
+            int dynamic_size;
+            // int _middle[12] = {5,22,35,50,62,68,84,95,108,130,135,147};
+            // int _middle[12] = {5,16,28,40,55,65,80,93,106,120,135,147};
+            int how_many = 0;
+            int total_part = 0;
+            QueueType _qt;
+            ReadyTable *_rt;
+        };
+    }  // namespace common
 }  // namespace byteps
 
 #endif  // BYTEPS_SCHEDULED_QUEUE_H
