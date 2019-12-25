@@ -122,68 +122,69 @@ namespace byteps {
         std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard<std::mutex> lock(_mutex);
             std::shared_ptr<TensorTableEntry> task;
-                // TODO: below can be optimized -- if we take task from the tail, erase() can
-                // be faster
-                task = _sq.top();
-                _sq.pop();
-                if (task->ready_event) {
-                    if (!task->ready_event->Ready()) {
-                        return nullptr;
-                    }
+            // TODO: below can be optimized -- if we take task from the tail, erase() can
+            // be faster
+            task = _sq.top();
+            if (task == nullptr) return task; 
+            _sq.pop();
+            if (task->ready_event) {
+                if (!task->ready_event->Ready()) {
+                    return nullptr;
                 }
-                if (_is_scheduled) {
-                    if (task->len > _credits) {
-                        return nullptr;
-                    }
-                }
-                if (_rt) {
-                    if (!_rt->IsKeyReady(task->key)) {
-                        return nullptr;
-                    }
-                    _rt->ClearReadyCount(task->key);
-                }
-                std::string tmp = task->tensor_name;
-                if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
-                  if (_rest_part == 0) {
-                        if (task->priority == 0) {
-                            _meetzero = 1;
-                        }
-                        if (!_meetzero || (_meetzero && _dooropen)) {
-                            _rest_part = task->total_partnum - 1;
-                            BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
-                            if (_rest_part == 0) {
-                              _tensor_num++;
-                              BPS_LOG(INFO) << _tensor_num << " done.";
-                            }
-                            if (_meetzero) {
-                                //BPS_LOG(INFO) << "close door";
-                                _dooropen = 0;
-                            }
-                        }
-                        else {
-                            // here, _door must be closed, skip
-                            //BPS_LOG(INFO) << "door is closed, skip";
-                        }
-                   // return task;
-                  } else {
-                      _rest_part--;
-                      BPS_LOG(INFO) << task->tensor_name << " still has " << _rest_part << " parts left.";
-                      if (_rest_part == 0) {
-                        _tensor_num++;
-                          BPS_LOG(INFO) << _tensor_num << " done.";
-                      }
-                  }
-              //all push process end in this iteration , then reinitalize varibles.
-                if (_tensor_num == 157 && _myqueue.empty()) {
-                    BPS_LOG(INFO) << "Clear";
-                    _meetzero = 0;
-                    _dooropen = 1;
-                    _tensor_num = 0;
-                }
-                task->ready_event = nullptr;
-                recorderTs(task);
-                return task;
             }
+            if (_is_scheduled) {
+                if (task->len > _credits) {
+                    return nullptr;
+                }
+            }
+            if (_rt) {
+                if (!_rt->IsKeyReady(task->key)) {
+                    return nullptr;
+                }
+                _rt->ClearReadyCount(task->key);
+            }
+            std::string tmp = task->tensor_name;
+            if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+                if (_rest_part == 0) {
+                    if (task->priority == 0) {
+                        _meetzero = 1;
+                    }
+                    if (!_meetzero || (_meetzero && _dooropen)) {
+                        _rest_part = task->total_partnum - 1;
+                        BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
+                        if (_rest_part == 0) {
+                            _tensor_num++;
+                            BPS_LOG(INFO) << _tensor_num << " done.";
+                        }
+                        if (_meetzero) {
+                            //BPS_LOG(INFO) << "close door";
+                            _dooropen = 0;
+                        }
+                    }
+                    else {
+                        // here, _door must be closed, skip
+                        //BPS_LOG(INFO) << "door is closed, skip";
+                    }
+                // return task;
+                } else {
+                    _rest_part--;
+                    BPS_LOG(INFO) << task->tensor_name << " still has " << _rest_part << " parts left.";
+                    if (_rest_part == 0) {
+                    _tensor_num++;
+                        BPS_LOG(INFO) << _tensor_num << " done.";
+                    }
+            }
+            //all push process end in this iteration , then reinitalize varibles.
+            if (_tensor_num == 157 && _myqueue.empty()) {
+                BPS_LOG(INFO) << "Clear";
+                _meetzero = 0;
+                _dooropen = 1;
+                _tensor_num = 0;
+            }
+            task->ready_event = nullptr;
+            recorderTs(task);
+            return task;
+          }
 
           if (_is_scheduled) {
               _credits -= task->len;
@@ -197,7 +198,7 @@ namespace byteps {
           // Add for profiling communication traces
           recorderTs(task);
           return task;
-      return nullptr;
+        return nullptr;
   }
 
 
@@ -206,6 +207,7 @@ namespace byteps {
             std::lock_guard<std::mutex> lock(_mutex);
             std::shared_ptr<TensorTableEntry> task;
             task = _sq.top();
+            if (task == nullptr) return task; 
             _sq.pop();
             if (task->ready_event) {
                 BPS_CHECK(task->ready_event->Ready());
