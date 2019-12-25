@@ -22,6 +22,7 @@ namespace byteps {
     namespace common {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
+            BPS_LOG(TRACE) << "In init.[R]" ;
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
