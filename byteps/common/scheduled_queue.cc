@@ -211,7 +211,6 @@ namespace byteps {
                 BPS_CHECK(task->ready_event->Ready());
             }
             if (task->key != (uint64_t) key) {
-                continue;
             }
 
             BPS_CHECK(task->tensor_name != "");
