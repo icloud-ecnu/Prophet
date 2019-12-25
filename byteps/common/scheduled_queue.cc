@@ -132,7 +132,7 @@ namespace byteps {
                     }
                 }
                 if (_is_scheduled) {
-                    if (task)->len > _credits) {
+                    if (task->len > _credits) {
                         return nullptr;
                     }
                 }
@@ -153,7 +153,7 @@ namespace byteps {
                             BPS_LOG(INFO) << task->tensor_name << " has " << _rest_part << " parts left.";
                             if (_rest_part == 0) {
                               _tensor_num++;
-                              BPS_LOG(INFO) << _tensor_num << " done.;
+                              BPS_LOG(INFO) << _tensor_num << " done.";
                             }
                             if (_meetzero) {
                                 //BPS_LOG(INFO) << "close door";
@@ -171,7 +171,7 @@ namespace byteps {
                       BPS_LOG(INFO) << task->tensor_name << " still has " << _rest_part << " parts left.";
                       if (_rest_part == 0) {
                         _tensor_num++;
-                          BPS_LOG(INFO) << _tensor_num << " done.;
+                          BPS_LOG(INFO) << _tensor_num << " done.";
                       }
                   }
               //all push process end in this iteration , then reinitalize varibles.
