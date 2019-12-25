@@ -24,16 +24,6 @@
 #include "common.h"
 #include "ready_table.h"
 
-struct comparator {
-    bool operator()(std::shared_ptr<TensorTableEntry> a,
-                    std::shared_ptr<TensorTableEntry> b) {
-        if (a->priority == b->priority) {
-            return (a->key < b->key);  // from the first partition to the last
-        }
-        return (a->priority > b->priority);  // from higher priority to lower
-    }
-};
-
 namespace byteps {
 namespace common {
 
@@ -49,6 +39,15 @@ class BytePSScheduledQueue {
   void reportFinish(int size);
 
  private:
+    struct comparator {
+        bool operator()(std::shared_ptr<TensorTableEntry> a,
+                        std::shared_ptr<TensorTableEntry> b) {
+            if (a->priority == b->priority) {
+                return (a->key < b->key);  // from the first partition to the last
+            }
+            return (a->priority > b->priority);  // from higher priority to lower
+        }
+    };
   // TODO: use priority queue or heap
   std::priority_queue<std::shared_ptr<TensorTableEntry>, std::vector<std::shared_ptr<TensorTableEntry> >, comparator> _sq;
   //add  myqueue to control addtask process.
