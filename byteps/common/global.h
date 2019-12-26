@@ -23,6 +23,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 #include "common.h"
 #include "communicator.h"
 #include "cpu_reducer.h"
@@ -34,159 +35,213 @@
 #include "shared_memory.h"
 
 namespace byteps {
-namespace common {
+    namespace common {
 
-struct PSKV {
-  ps::SArray<ps::Key> keys;  // n keys
-  ps::SArray<int> lens;      // the length of the i-th value
-  int size;
-};
+        struct PSKV {
+            ps::SArray <ps::Key> keys;  // n keys
+            ps::SArray<int> lens;      // the length of the i-th value
+            int size;
+        };
 
-typedef void (*LoopFunction)();
+        typedef void (*LoopFunction)();
 
-class BytePSGlobal {
- public:
-  static void Init();
-  static void Start(const std::vector<LoopFunction>& func);
-  static Status CheckInit();
-  static bool ShouldShutdown() { return _should_shutdown; }
-  static void Shutdown();
+        class BytePSGlobal {
+        public:
+            static void Init();
 
-  static int GetRank() { return _rank; }
-  static int GetLocalRank() { return _local_rank; }
-  static int GetSize() { return _size; }
-  static int GetLocalSize() { return _local_size; }
-  static int GetWorkerID() { return _worker_id; }
-  static int GetNumWorker() { return _num_worker; }
-  static int GetPcieSwitchSize() { return _nccl_manager->GetSize(); }
-  static int GetPcieSwitchIndex() {
-    return _local_rank / _nccl_manager->GetSize();
-  }
-  static int GetPcieSwitchNum() {
-    return _local_size / _nccl_manager->GetSize();
-  }
-  static bool IsRootDevice() { return _is_root_device; }
-  static bool IsDistributed() { return _is_distributed_job; }
-  static bool IsCrossPcieSwitch() { return _is_cross_pcie_switch; }
-  static BytePSRole GetMyRole() { return _my_role; }
-  static std::shared_ptr<BytePSComm> GetBasicComm() { return _basic_comm; }
-  static std::shared_ptr<BytePSSharedMemory> GetSharedMemoryObj() {
-    return _shm_obj;
-  }
+            static void Start(const std::vector <LoopFunction> &func);
 
-  static BytePSScheduledQueue* GetScheduledQueue(QueueType queueType);
-  static void CreateScheduledQueue(QueueType queueType);
-  static ps::KVWorker<char>* GetPS() { return _ps; }
-  static ps::KVWorker<char>* GetOrInitPS();
+            static Status CheckInit();
 
-  static bool IsTensorDeclared(const std::string& name);
-  static ps::Key GetKeyFromName(const std::string& name);
-  static BPSContext& GetContextFromName(const std::string& name);
-  static uint32_t GetTensorCount();
+            static bool ShouldShutdown() { return _should_shutdown; }
 
-  static std::vector<unsigned long> _server_accumulated_len;
-  static std::unordered_map<uint64_t, PSKV> ps_kv_;
-  static PSKV& EncodeDefaultKey(uint64_t key, size_t len);
+            static void Shutdown();
 
-  static uint32_t GetPartitionBound() { return _partition_bytes; }
+            static int GetRank() { return _rank; }
 
-  static cudaStream_t* GetCopyDevice2HostStream();
-  static cudaStream_t* GetCopyHost2DeviceStream();
+            static int GetLocalRank() { return _local_rank; }
 
-  // methods to access or modify the _ready_table
-  static ReadyTable* GetReduceTable() { return _reduce_table; }
-  static ReadyTable* GetPcieReduceTable() { return _pcie_reduce_table; }
-  static ReadyTable* GetBroadcastTable() { return _broadcast_table; }
-  static ReadyTable* GetPushTable() { return _push_table; }
+            static int GetSize() { return _size; }
 
-  // for non-root
-  static ReadyTable* GetCopyTable() { return _copy_table; }
+            static int GetLocalSize() { return _local_size; }
 
-  static std::shared_ptr<NcclManager> GetNccl() { return _nccl_manager; }
-  static std::shared_ptr<CpuReducer> GetCpuReducer() { return _cpu_reducer; }
+            static int GetWorkerID() { return _worker_id; }
 
-  static bool IsTensorSampled(uint64_t key) { return (key == _sample_key); }
+            static int GetNumWorker() { return _num_worker; }
 
-  static void SetProfileFlag(BPSContext *ctxt);
-  static void EmitTrace(std::ostream *os, const BPSCommTime *ret, BPSContext *ctxt);
-  static void OutputTraces();
-  static bool IsAllTensorOutput(const std::string& name);
-  static void Who2beOutput(const std::string& name);
+            static int GetPcieSwitchSize() { return _nccl_manager->GetSize(); }
 
-  static void ReportThreadFinish() { joined_thread_cnt.fetch_add(1); }
-  static bool IsAllThreadFinish(int total_thread_num);
-  static std::atomic_int joined_thread_cnt;
+            static int GetPcieSwitchIndex() {
+                return _local_rank / _nccl_manager->GetSize();
+            }
 
- private:
-  static std::mutex _init_mutex;
-  static volatile bool _initialized;
-  static volatile bool _should_shutdown;
+            static int GetPcieSwitchNum() {
+                return _local_size / _nccl_manager->GetSize();
+            }
 
-  static int _rank;
-  static int _local_rank;
-  static int _size;
-  static int _local_size;
-  static int _worker_id;
-  static int _num_worker;
-  static bool _is_root_device;
-  static bool _is_distributed_job;
-  static bool _is_cross_pcie_switch;
-  static BytePSRole _my_role;
-  static std::shared_ptr<BytePSComm> _basic_comm;
-  static std::shared_ptr<BytePSSharedMemory> _shm_obj;
+            static bool IsRootDevice() { return _is_root_device; }
 
-  static volatile BytePSScheduledQueue* _queues[QueueNum];
-  static std::mutex _queues_mutex[QueueNum];
-  static std::vector<std::thread*> _threads;
+            static bool IsDistributed() { return _is_distributed_job; }
 
-  static std::mutex _context_mutex;
+            static bool IsCrossPcieSwitch() { return _is_cross_pcie_switch; }
 
-  static ps::KVWorker<char>* _ps;
-  static std::mutex _encode_mutex;
-  static std::unordered_map<std::string, BPSContext> _name_to_cxt;
+            static BytePSRole GetMyRole() { return _my_role; }
 
-  static std::unordered_map<std::string, int> _name2end;
-  static int _output_counter;
-  static int _is_trace;
-  static int _start_step;
-  static int _end_step;
-  static std::string _trace_dir;
+            static std::shared_ptr <BytePSComm> GetBasicComm() { return _basic_comm; }
 
-  static cudaStream_t* _copy_device2host_stream;
-  static cudaStream_t* _copy_host2device_stream;
+            static std::shared_ptr <BytePSSharedMemory> GetSharedMemoryObj() {
+                return _shm_obj;
+            }
 
-  static uint32_t _partition_bytes;
+            static BytePSScheduledQueue *GetScheduledQueue(QueueType queueType);
 
-  // (key, ready_signal_count) pair, only valid for root device
-  static ReadyTable* _reduce_table;
-  static ReadyTable* _pcie_reduce_table;
-  static ReadyTable* _broadcast_table;
-  static ReadyTable* _push_table;
+            static void CreateScheduledQueue(QueueType queueType);
 
-  // (key, ready_signal_count) pair, only valid for non-root device
-  static ReadyTable* _copy_table;
+            static ps::KVWorker<char> *GetPS() { return _ps; }
 
-  static std::shared_ptr<NcclManager> _nccl_manager;
-  static std::shared_ptr<CpuReducer> _cpu_reducer;
+            static ps::KVWorker<char> *GetOrInitPS();
 
-  // for debug sampling
-  static uint64_t _sample_key;
+            static bool IsTensorDeclared(const std::string &name);
 
-  static int AlignTo(int input, int alignment) {
-    return input / alignment * alignment;
-  }
-  
-  // hash functions
-  static std::string _hash_knob;
-  static std::hash<std::string> _built_in_hash_fn;
-  static unsigned int _built_in_hash_coefficient;
-  static uint64_t Hash_Naive(uint64_t key);
-  static uint64_t Hash_BuiltIn(uint64_t key);
-  static uint64_t Hash_DJB2(uint64_t key);
-  static uint64_t Hash_SDBM(uint64_t key);
-};
+            static ps::Key GetKeyFromName(const std::string &name);
 
-}  // namespace common
+            static BPSContext &GetContextFromName(const std::string &name);
+
+            static uint32_t GetTensorCount();
+
+            static std::vector<unsigned long> _server_accumulated_len;
+            static std::unordered_map <uint64_t, PSKV> ps_kv_;
+
+            static PSKV &EncodeDefaultKey(uint64_t key, size_t len);
+
+            static uint32_t GetPartitionBound() { return _partition_bytes; }
+
+            static cudaStream_t *GetCopyDevice2HostStream();
+
+            static cudaStream_t *GetCopyHost2DeviceStream();
+
+            // methods to access or modify the _ready_table
+            static ReadyTable *GetReduceTable() { return _reduce_table; }
+
+            static ReadyTable *GetPcieReduceTable() { return _pcie_reduce_table; }
+
+            static ReadyTable *GetBroadcastTable() { return _broadcast_table; }
+
+            static ReadyTable *GetPushTable() { return _push_table; }
+
+            static ReadyTable *GetPullTable() { return _pull_table; }
+
+            // reduce strategies
+            static bool IsUsingReduce() { return _is_using_reduce; }
+
+            static int GetReduceRootByKey(ps::Key k) {
+                return _reduce_roots[Hash_DJB2(k) % _reduce_roots.size()];
+            }
+
+            // for non-root
+            static ReadyTable *GetCopyTable() { return _copy_table; }
+
+            static std::shared_ptr <NcclManager> GetNccl() { return _nccl_manager; }
+
+            static std::shared_ptr <CpuReducer> GetCpuReducer() { return _cpu_reducer; }
+
+            static bool IsTensorSampled(uint64_t key) { return (key == _sample_key); }
+
+            static void SetProfileFlag(BPSContext *ctxt);
+
+            static void EmitTrace(std::ostream *os, const BPSCommTime *ret, BPSContext *ctxt);
+
+            static void OutputTraces();
+
+            static bool IsAllTensorOutput(const std::string &name);
+
+            static void Who2beOutput(const std::string &name);
+
+            static void ReportThreadFinish() { joined_thread_cnt.fetch_add(1); }
+
+            static bool IsAllThreadFinish(int total_thread_num);
+
+            static std::atomic_int joined_thread_cnt;
+
+        private:
+            static std::mutex _init_mutex;
+            static volatile bool _initialized;
+            static volatile bool _should_shutdown;
+
+            static int _rank;
+            static int _local_rank;
+            static int _size;
+            static int _local_size;
+            static int _worker_id;
+            static int _num_worker;
+            static bool _is_root_device;
+            static bool _is_distributed_job;
+            static bool _is_cross_pcie_switch;
+            static BytePSRole _my_role;
+            static std::shared_ptr <BytePSComm> _basic_comm;
+            static std::shared_ptr <BytePSSharedMemory> _shm_obj;
+
+            static volatile BytePSScheduledQueue *_queues[QueueNum];
+            static std::mutex _queues_mutex[QueueNum];
+            static std::vector<std::thread *> _threads;
+
+            static std::mutex _context_mutex;
+
+            static ps::KVWorker<char> *_ps;
+            static std::mutex _encode_mutex;
+            static std::unordered_map <std::string, BPSContext> _name_to_cxt;
+
+            static std::unordered_map<std::string, int> _name2end;
+            static int _output_counter;
+            static int _is_trace;
+            static int _start_step;
+            static int _end_step;
+            static std::string _trace_dir;
+
+            static cudaStream_t *_copy_device2host_stream;
+            static cudaStream_t *_copy_host2device_stream;
+
+            static uint32_t _partition_bytes;
+
+            // (key, ready_signal_count) pair, only valid for root device
+            static ReadyTable *_reduce_table;
+            static ReadyTable *_pcie_reduce_table;
+            static ReadyTable *_broadcast_table;
+            static ReadyTable *_push_table;
+            static ReadyTable *_pull_table;
+
+            // (key, ready_signal_count) pair, only valid for non-root device
+            static ReadyTable *_copy_table;
+
+            // for reduce strategies
+            static bool _is_using_reduce;
+            static std::vector<int> _reduce_roots;
+
+            static std::shared_ptr <NcclManager> _nccl_manager;
+            static std::shared_ptr <CpuReducer> _cpu_reducer;
+
+            // for debug sampling
+            static uint64_t _sample_key;
+
+            static int AlignTo(int input, int alignment) {
+                return input / alignment * alignment;
+            }
+
+            // hash functions
+            static std::string _hash_knob;
+            static std::hash <std::string> _built_in_hash_fn;
+            static unsigned int _built_in_hash_coefficient;
+
+            static uint64_t Hash_Naive(uint64_t key);
+
+            static uint64_t Hash_BuiltIn(uint64_t key);
+
+            static uint64_t Hash_DJB2(uint64_t key);
+
+            static uint64_t Hash_SDBM(uint64_t key);
+        };
+
+    }  // namespace common
 }  // namespace byteps
 
 #endif  // BYTEPS_GLOBAL_H
