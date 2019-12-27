@@ -132,7 +132,6 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             // TODO: below can be optimized -- if we take task from the tail, erase() can
             // be faster
-            BPS_LOG(INFO) << "getTask";
             for (auto it = _sq.begin(); it != _sq.end(); ++it) {
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
@@ -156,8 +155,8 @@ namespace byteps {
                 {
                     BPS_LOG(INFO) << "IN PUSH";
                     if (_dequeue != 1) {
-                        BPS_LOG(DEBUG) << "Position 1" << " pointer: " << _pointer << " stagestart: " << _stagestart
-                                       << " mystack empty:" << _mystack.empty() << "task name: " << task->tensor_name;
+                        BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
+                                       << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer] << "task name: " << task->tensor_name;
 
                         if ((task->priority == -1 * _grad_checkpoint[_pointer] && _stagestart) || (!_mystack.empty() && task->priority > -1 * _grad_checkpoint[_pointer] && task->priority < -1 * _grad_checkpoint[_pointer - 1] && task->priority == _mystack.top() + 1)) {
                             if (task->priority == -1 * _grad_checkpoint[_pointer]) {
