@@ -132,6 +132,7 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             // TODO: below can be optimized -- if we take task from the tail, erase() can
             // be faster
+            BPS_LOG(INFO) << "getTask";
             for (auto it = _sq.begin(); it != _sq.end(); ++it) {
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
@@ -153,6 +154,7 @@ namespace byteps {
 
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos)
                 {
+                    BPS_LOG(INFO) << "IN PUSH";
                     if (_dequeue != 1) {
                         BPS_LOG(DEBUG) << "Position 1" << " pointer: " << _pointer << " stagestart: " << _stagestart
                                        << " mystack empty:" << _mystack.empty() << "task name: " << task->tensor_name;
@@ -167,9 +169,11 @@ namespace byteps {
                             }
                             total_part += task->total_partnum;
                             how_many += 1;
-                            BPS_LOG(DEBUG) << "ENQUEUE1 element: " << task->priority << " for " << task->total_partnum << " parts";
+                            BPS_LOG(INFO) << "how many=" << how_many;
+                            BPS_LOG(INFO) << "ENQUEUE1 element: " << task->priority << " for " << task->total_partnum << " parts";
                         }
                         if (task->priority * -1 <= _grad_checkpoint[_pointer] && task->priority * -1 > _grad_checkpoint[_pointer - 1]) {
+                            BPS_LOG(INFO) << "pq push " << task->priority;
                             pq.push(task);
                             _sq.erase(it);
                             break;
@@ -177,14 +181,14 @@ namespace byteps {
                         if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] + 1 && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
-                            BPS_LOG(DEBUG) << "enqueue operation of one stage is over." << "_sizepointer:";
+                            BPS_LOG(INFO) << "enqueue operation of one stage is over." << "_sizepointer:";
                             break;
                         }
                         continue;
                     } else {
                         if (pq.size() == 0) {
                             _dequeue = 0;
-                            BPS_LOG(DEBUG) << "Clear.";
+                            BPS_LOG(INFO) << "Clear.";
                             _pointer = 12;
                             _stagestart = 1;
                             _meetzero = 0;
@@ -197,32 +201,32 @@ namespace byteps {
                         task = pq.top();
                         if (task->priority == 0) {
                             _meetzero = 1;
-                            BPS_LOG(DEBUG) << "Meet zero.";
+                            BPS_LOG(INFO) << "Meet zero.";
                         }
                         if (!_meetzero) {
                             if (dynamic_size > task->len) {
                                 dynamic_size -= task->len;
-                                BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
+                                BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
                                                << dynamic_size;
                                 pq.pop();
                                 _mystack.pop();
-                                BPS_LOG(DEBUG) << "PUSH gradient before 0: " << tmp;
+                                BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
                             } else {   //nxet stage enstack could begin.
                                 _dequeue = 0;
                                 _pointer--;
                                 _stagestart = 1;
-                                BPS_LOG(DEBUG) << "No left size. Waiting for next gradient block.";
+                                BPS_LOG(INFO) << "No left size. Waiting for next gradient block.";
                                 break;
                             }
                         } else if (!_dooropen) {//we cannot change the value of tensor_part if door is closed.
-                            BPS_LOG(DEBUG) << "door is closed.";
+                            BPS_LOG(INFO) << "door is closed.";
                             break;
                         } else {
                             _dooropen--;
                             // dynamic_size -= task -> len;  // if meetzero, dynamic size is no meaning.
                             pq.pop();
                             _mystack.pop();
-                            BPS_LOG(DEBUG) << "PUSH gradient after 0: " << tmp;
+                            BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
                         }
                         task->ready_event = nullptr;
                         // Add for profiling communication traces
