@@ -155,8 +155,8 @@ namespace byteps {
                 {
                     BPS_LOG(INFO) << "IN PUSH";
                     if (_dequeue != 1) {
-                        BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
-                                       << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer];
+                        // BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
+                        //                << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer];
 
                         if ((task->priority == -1 * _grad_checkpoint[_pointer] && _stagestart) || (!_mystack.empty() && task->priority > -1 * _grad_checkpoint[_pointer] && task->priority < -1 * _grad_checkpoint[_pointer - 1] && task->priority == _mystack.top() + 1)) {
                             if (task->priority == -1 * _grad_checkpoint[_pointer]) {
@@ -176,7 +176,9 @@ namespace byteps {
                             BPS_LOG(INFO) << "pq push " << task->priority;
                             pq.push(task);
                             _sq.erase(it);
-                            it--;
+                            if (it == _sq.end()) {
+                              break;
+                            }
                         }
                         BPS_LOG(INFO) << "how_many:" << how_many << "," << "should be:" << (_grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1]) << ", total_part: " << total_part
                                        << " pq.size():" << pq.size();
