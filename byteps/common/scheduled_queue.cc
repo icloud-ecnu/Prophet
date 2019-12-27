@@ -260,6 +260,7 @@ namespace byteps {
                             break;
                         }
                         task = pq.top();
+                        BPS_LOG(INFO) << "pq.top()." << pq.top()->tensor_name;
                         if (task->priority == 0) {
                             _meetzero = 1;
                             BPS_LOG(INFO) << "Meet zero.";

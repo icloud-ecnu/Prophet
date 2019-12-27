@@ -50,9 +50,9 @@ namespace byteps {
                 bool operator()(std::shared_ptr <TensorTableEntry> a,
                                 std::shared_ptr <TensorTableEntry> b) {
                     if (a->priority == b->priority) {
-                        return (a->key < b->key);  // from the first partition to the last
+                        return (a->key < b->key);
                     }
-                    return (a->priority > b->priority);  // from higher priority to lower
+                    return (a->priority < b->priority);
                 }
             };
 
