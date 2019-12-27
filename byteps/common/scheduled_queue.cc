@@ -132,7 +132,59 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             // TODO: below can be optimized -- if we take task from the tail, erase() can
             // be faster
-            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+
+            if (_qt == PUSH && _sq.size() == 0) {
+              if (pq.size() == 0) {
+                  _dequeue = 0;
+                  BPS_LOG(INFO) << "Clear.";
+                  _pointer = 12;
+                  _stagestart = 1;
+                  _meetzero = 0;
+                  _sizepointer = 0;
+                  _dooropen = 11;
+                  how_many = 0;
+                  total_part = 0;
+                  for (int i = 0; i < 160; i++) {
+                    _vis[i] = 0;
+                  }
+                  return nullptr;
+              }
+              task = pq.top();
+              if (task->priority == 0) {
+                  _meetzero = 1;
+                  BPS_LOG(INFO) << "Meet zero.";
+              }
+              if (!_meetzero) {
+                  if (dynamic_size > task->len) {
+                      dynamic_size -= task->len;
+                      BPS_LOG(INFO) << "dequeue element: " << task->tensor_name;
+                      pq.pop();
+                      _mystack.pop();
+                      total_part--;
+                      BPS_LOG(INFO) << "PUSH gradient before 0: " << task->tensor_name;
+                  } else {   //nxet stage enstack could begin.
+                      _dequeue = 0;
+                      _pointer--;
+                      _stagestart = 1;
+                      BPS_LOG(INFO) << "No left size. Waiting for next gradient block.";
+                      break;
+                  }
+              } else if (!_dooropen) {//we cannot change the value of tensor_part if door is closed.
+                  BPS_LOG(INFO) << "door is closed.";
+                  break;
+              } else {
+                  _dooropen--;
+                  // dynamic_size -= task -> len;  // if meetzero, dynamic size is no meaning.
+                  pq.pop();
+                  _mystack.pop();
+                  BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
+              }
+              task->ready_event = nullptr;
+              // Add for profiling communication traces
+              recorderTs(task);
+              return task;
+            } else {
+              for (auto it = _sq.begin(); it != _sq.end(); ++it) {
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
                         continue;
@@ -253,6 +305,7 @@ namespace byteps {
                 return task;
             }
             return nullptr;
+          }
         }
 
 
