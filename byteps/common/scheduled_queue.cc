@@ -154,8 +154,7 @@ namespace byteps {
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos)
                 {
                     if (_dequeue != 1) {
-                        // BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
-                        //                << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer];
+                         BPS_LOG(INFO) << "task->priority:" << task->priority << " _pointer: " << _pointer;
 
                         if ((task->priority == -1 * _grad_checkpoint[_pointer] && _stagestart) || (!_mystack.empty() && task->priority > -1 * _grad_checkpoint[_pointer] && task->priority < -1 * _grad_checkpoint[_pointer - 1] && task->priority == _mystack.top() + 1)) {
                             if (task->priority == -1 * _grad_checkpoint[_pointer]) {
@@ -184,7 +183,7 @@ namespace byteps {
                         if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
-                            BPS_LOG(INFO) << "enqueue operation of one stage is over." << "_sizepointer:";
+                            BPS_LOG(INFO) << "enqueue operation of one stage is over." ;
                             break;
                         }
                         continue;
@@ -213,8 +212,7 @@ namespace byteps {
                         if (!_meetzero) {
                             if (dynamic_size > task->len) {
                                 dynamic_size -= task->len;
-                                BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
-                                               << dynamic_size;
+                                BPS_LOG(INFO) << "dequeue element: " << task->tensor_name;
                                 pq.pop();
                                 _mystack.pop();
                                 BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
