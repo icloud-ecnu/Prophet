@@ -226,6 +226,9 @@ namespace byteps {
                         if (_vis[task->priority * -1]) {
                             BPS_LOG(INFO) << "pq push " << task->priority;
                             pq.push(task);
+                            if (task->priority == 0) {
+                              _dequeue = 1;
+                            }
                             _sq.erase(it);
                             if (it == _sq.end()) {
                               break;
