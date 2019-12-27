@@ -180,7 +180,7 @@ namespace byteps {
                         }
                         BPS_LOG(INFO) << "how_many:" << how_many << " total_part: " << total_part
                                        << " pq.size():" << pq.size();
-                        if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] + 1 && total_part == pq.size()) {
+                        if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
                             _pointer--;
