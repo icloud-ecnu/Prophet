@@ -167,17 +167,17 @@ namespace byteps {
                       _pointer--;
                       _stagestart = 1;
                       BPS_LOG(INFO) << "No left size. Waiting for next gradient block.";
-                      break;
+                      return nullptr;
                   }
               } else if (!_dooropen) {//we cannot change the value of tensor_part if door is closed.
                   BPS_LOG(INFO) << "door is closed.";
-                  break;
+                  return nullptr;
               } else {
                   _dooropen--;
                   // dynamic_size -= task -> len;  // if meetzero, dynamic size is no meaning.
                   pq.pop();
                   _mystack.pop();
-                  BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
+                  BPS_LOG(INFO) << "PUSH gradient after 0: " << task->tensor_name;
               }
               task->ready_event = nullptr;
               // Add for profiling communication traces
