@@ -181,6 +181,7 @@ namespace byteps {
                         if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] + 1 && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
+                            _pointer--;
                             BPS_LOG(INFO) << "enqueue operation of one stage is over." << "_sizepointer:";
                             break;
                         }
