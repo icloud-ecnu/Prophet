@@ -133,7 +133,7 @@ namespace byteps {
             // TODO: below can be optimized -- if we take task from the tail, erase() can
             // be faster
 
-            if (!first && _qt == PUSH && _sq.size() == 0) {
+            if (_dequeue && _qt == PUSH && _sq.size() == 0) {
               if (pq.size() == 0) {
                   _dequeue = 0;
                   BPS_LOG(INFO) << "Clear.";
@@ -202,7 +202,6 @@ namespace byteps {
                     _rt->ClearReadyCount((*it)->key);
                 }
                 std::string tmp = (*it)->tensor_name;
-                first = 0;
                 task = *it;
 
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos)
