@@ -153,7 +153,6 @@ namespace byteps {
 
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos)
                 {
-                    BPS_LOG(INFO) << "IN PUSH";
                     if (_dequeue != 1) {
                         // BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
                         //                << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer];
@@ -185,7 +184,6 @@ namespace byteps {
                         if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
-                            _pointer--;
                             BPS_LOG(INFO) << "enqueue operation of one stage is over." << "_sizepointer:";
                             break;
                         }
@@ -201,6 +199,7 @@ namespace byteps {
                             _dooropen = 11;
                             how_many = 0;
                             total_part = 0;
+                            _pointer--;
                             for (int i = 0; i < 160; i++) {
                               _vis[i] = 0;
                             }
