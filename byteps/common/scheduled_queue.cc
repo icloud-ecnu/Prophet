@@ -178,7 +178,7 @@ namespace byteps {
                             _sq.erase(it);
                             it--;
                         }
-                        BPS_LOG(INFO) << "how_many:" << how_many << " total_part: " << total_part
+                        BPS_LOG(INFO) << "how_many:" << how_many << "," << "should be:" << (_grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1]) << ", total_part: " << total_part
                                        << " pq.size():" << pq.size();
                         if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
                             _dequeue = 1;
