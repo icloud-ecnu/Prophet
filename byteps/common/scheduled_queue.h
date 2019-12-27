@@ -73,7 +73,7 @@ namespace byteps {
             bool _is_scheduled;
             // int _tensor_part[160] = {0};//log every transferred tensor part
             // int _tensor_num = 0; //log the number of transferred tensor.
-            // int _vis[160] = {0};
+            int _vis[160] = {0};
             int _meetzero = 0;
             int _dooropen = 11;
             // int _grad_checkpoint[13] = {0,10,23,36,51,63,78,91,104,118,131,144,157};

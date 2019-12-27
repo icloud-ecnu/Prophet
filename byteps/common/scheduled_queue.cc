@@ -156,7 +156,7 @@ namespace byteps {
                     BPS_LOG(INFO) << "IN PUSH";
                     if (_dequeue != 1) {
                         BPS_LOG(INFO) << "task->priority:" << task->priority << " stagestart: " << _stagestart
-                                       << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer] << "task name: " << task->tensor_name;
+                                       << " _grad_checkpoint[_pointer]:" << _grad_checkpoint[_pointer] << " task name: " << task->tensor_name;
 
                         if ((task->priority == -1 * _grad_checkpoint[_pointer] && _stagestart) || (!_mystack.empty() && task->priority > -1 * _grad_checkpoint[_pointer] && task->priority < -1 * _grad_checkpoint[_pointer - 1] && task->priority == _mystack.top() + 1)) {
                             if (task->priority == -1 * _grad_checkpoint[_pointer]) {
@@ -166,12 +166,13 @@ namespace byteps {
                             for (part = 0; part < task->total_partnum; part++) {
                                 _mystack.push(task->priority);
                             }
+                            _vis[task->priority * -1] = 1;
                             total_part += task->total_partnum;
                             how_many += 1;
                             BPS_LOG(INFO) << "how many=" << how_many;
                             BPS_LOG(INFO) << "ENQUEUE1 element: " << task->priority << " for " << task->total_partnum << " parts";
                         }
-                        if (task->priority * -1 <= _grad_checkpoint[_pointer] && task->priority * -1 > _grad_checkpoint[_pointer - 1]) {
+                        if (_vis[task->priority * -1]) {
                             BPS_LOG(INFO) << "pq push " << task->priority;
                             pq.push(task);
                             _sq.erase(it);
@@ -195,6 +196,9 @@ namespace byteps {
                             _dooropen = 11;
                             how_many = 0;
                             total_part = 0;
+                            for (int i = 0; i < 160; i++) {
+                              _vis[i] = 0;
+                            }
                             break;
                         }
                         task = pq.top();
