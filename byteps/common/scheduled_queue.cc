@@ -180,7 +180,7 @@ namespace byteps {
                         }
                         BPS_LOG(INFO) << "how_many:" << how_many << "," << "should be:" << (_grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1]) << ", total_part: " << total_part
                                        << " pq.size():" << pq.size();
-                        if (how_many == _grad_checkpoint[_pointer] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
+                        if (how_many == _grad_checkpoint[12] - _grad_checkpoint[_pointer - 1] && total_part == pq.size()) {
                             _dequeue = 1;
                             dynamic_size = _execution[_sizepointer++];
                             BPS_LOG(INFO) << "enqueue operation of one stage is over." ;
@@ -198,7 +198,6 @@ namespace byteps {
                             _dooropen = 11;
                             how_many = 0;
                             total_part = 0;
-                            _pointer--;
                             for (int i = 0; i < 160; i++) {
                               _vis[i] = 0;
                             }
@@ -215,7 +214,8 @@ namespace byteps {
                                 BPS_LOG(INFO) << "dequeue element: " << task->tensor_name;
                                 pq.pop();
                                 _mystack.pop();
-                                BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
+                                total_part--;
+                                BPS_LOG(INFO) << "PUSH gradient before 0: " << task->tensor_name;
                             } else {   //nxet stage enstack could begin.
                                 _dequeue = 0;
                                 _pointer--;
