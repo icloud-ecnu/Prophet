@@ -117,7 +117,7 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                BPS_LOG(INFO) << "now comparing " << x->priority << " and " << Priority;
+                BPS_LOG(INFO) << "now comparing " << x->priority << "x name is:" << x -> tensor_name << " and " << Priority;
                 return x->priority == Priority;
             }
         };
@@ -338,7 +338,12 @@ namespace byteps {
 //                        BPS_LOG(TRACE) << "Clear.";
 //                        _dequeue = 0;
 //                        _pointer = 12;
-//                        expected_priority = _grad_checkpoint[_pointer];
+//
+//
+//
+//
+//
+//                         = _grad_checkpoint[_pointer];
 //                        _stagestart = 1;
 //                        _meetzero = 0;
 //                        _sizepointer = 1;//different from push process
