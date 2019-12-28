@@ -47,37 +47,22 @@ class BytePSScheduledQueue {
   std::stack<int> _mystackpull;
   std::mutex _mutex;
   uint64_t _credits;
+  // uint64_t _pull_forward_size;
+  // uint64_t _pull_backward_size;
+  // uint64_t _pull_credits;
   bool _is_scheduled;
   int _tensor_part[160] = {0};//log every transferred tensor part
-  // int _tensor_num = 0; //log the number of transferred tensor.
+  int _tensor_num = 0; //log the number of transferred tensor.
   // int _vis[160] = {0};
   int _meetzero = 0;
-  int _dooropen = 11; 
-  int _pulldoor = 0 ; 
-  // int _grad_checkpoint[13] = {0,10,23,36,51,63,78,91,104,118,131,144,157};
-  int _grad_checkpoint[13] = {-1,9,22,35,50,62,77,90,103,117,130,143,156};
-  // int _execution[13] = {2170000,2380000,1340000,1540000,2130000,2740000,2250000,3290000,4580000,3890000,2950000,2000000,0};
-  int _backward_exec[13] = {4550000,4710000,2780000,3000000,4240000,5400000,4450000,6480000,9140000,7400000,5860000,0,0};
-  int _forward_exec[13] = {0,2700000,2800000,1680000,1800000,2550000,3240000,2670000,3800000,5400000,4400000,3500000,0};
-  int _exec_stage = 0;
-  int _noleftsize = 0;
-  int forward_dynamic_size;
-  int _sizepointer = 0;
-  int _stagepullnum = 0;
-
-  int _dequeue = 0;
-  int _pointer = 12;
-  int _stagestart = 1;
-  int dynamic_size ;
-  int _pushsize = 0;
-  int _pullsize = 0;
-  // int xxx;
-
-
-
-
-
-
+  int _dooropen = 11;  
+  int _grad_checkpoint[13] = {0,10,23,36,51,63,78,91,104,118,131,144,157};
+  // int _middle[12] = {5,22,35,50,62,68,84,95,108,130,135,147};
+  int _middle[12] = {5,16,28,40,55,65,80,93,106,120,135,147};
+  // int _tensor_part[160] = {0};
+  // int _tensor_numpull = 0;
+  // int _dooropenpull = 11;
+  // int _meetzeropull = 0;
 
   QueueType _qt;
   ReadyTable *_rt;

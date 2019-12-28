@@ -168,7 +168,7 @@ bool RunCoordinateLoopOnce(QueueType this_op) {
                    << "Signal=" << sig << ", rank=" << rank << ", key=" << key;
 
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -201,6 +201,14 @@ inline void PostNcclCalls(
 
   auto num_elem_per_gpu = len / nccl_size / unit_len;
   auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
+  if (BytePSGlobal::IsUsingReduce()) {
+    nccl_root = BytePSGlobal::GetReduceRootByKey(key);
+    num_elem_per_gpu = 0;
+    left_elem = len / unit_len;
+    BPS_LOG(TRACE) << "Reduce key=" << key
+                   << " to root=" << nccl_root
+                   << " rank=" << BytePSGlobal::GetLocalRank();
+  }
 
   BPS_CHECK(task->tensor_name != "");
   BPS_LOG(TRACE) << task->tensor_name << " calling NCCL " << LogStrings[this_op]
@@ -289,7 +297,7 @@ bool RunRootNcclLoopOnce() {
     BytePSGlobal::GetNccl()->EnqueueGroup(nccl_entry);
   } else {
     NCCLCHECK(ncclGroupEnd());
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
 
   return true;
@@ -349,7 +357,7 @@ bool RunSyncNcclOnce() {
     BPS_LOG(TRACE) << "Finished NCCL Group size=" << nccl_entry->tasks.size()
                    << " rank=" << BytePSGlobal::GetLocalRank();
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -395,15 +403,21 @@ bool RunCopyDevice2HostLoopOnce() {
     auto num_elem_per_gpu = len / nccl_size / unit_len;
     auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
 
+    auto copy_offset = nccl_rank * num_elem_per_gpu * unit_len;
     auto copy_len = num_elem_per_gpu * unit_len;
     if (left_elem && (nccl_root == nccl_rank)) {
       copy_len += left_elem * unit_len;
     }
 
+    if (BytePSGlobal::IsUsingReduce()) {
+      copy_offset = 0;
+      copy_len = (BytePSGlobal::GetReduceRootByKey(key) == nccl_rank) ? len : 0;
+    }
+
     if (copy_len) {
       CUDA_CALL(cudaMemcpyAsync(
-          (void *)(cpubuff + nccl_rank * num_elem_per_gpu * unit_len),
-          (const void *)(p + nccl_rank * num_elem_per_gpu * unit_len),
+          (void *)(cpubuff + copy_offset),
+          (const void *)(p + copy_offset),
           (size_t)copy_len, (cudaMemcpyKind)cudaMemcpyDeviceToHost,
           (cudaStream_t)*copy_d2h_Stream));
       CUDA_CALL(cudaStreamSynchronize(*copy_d2h_Stream));
@@ -411,7 +425,7 @@ bool RunCopyDevice2HostLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -464,7 +478,7 @@ bool RunPcieReduceLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -502,7 +516,7 @@ bool RunPushLoopOnce() {
       FinishOrProceed(task);
     }
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -538,7 +552,7 @@ bool RunPullLoopOnce() {
                                    FinishOrProceed(task);
                                  });
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -567,15 +581,21 @@ void CopyHost2Device(std::shared_ptr<byteps::common::TensorTableEntry> task) {
   auto num_elem_per_gpu = len / nccl_size / unit_len;
   auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
 
+  auto copy_offset = nccl_rank * num_elem_per_gpu * unit_len;
   auto copy_len = num_elem_per_gpu * unit_len;
   if (left_elem && (nccl_root == nccl_rank)) {
     copy_len += left_elem * unit_len;
   }
 
+  if (BytePSGlobal::IsUsingReduce()) {
+    copy_offset = 0;
+    copy_len = (BytePSGlobal::GetReduceRootByKey(key) == nccl_rank) ? len : 0;
+  }
+
   if (copy_len) {
     CUDA_CALL(cudaMemcpyAsync(
-        (void *)(gpu_addr + nccl_rank * num_elem_per_gpu * unit_len),
-        (const void *)(cpubuff + nccl_rank * num_elem_per_gpu * unit_len),
+        (void *)(gpu_addr + copy_offset),
+        (const void *)(cpubuff + copy_offset),
         (size_t)copy_len, (cudaMemcpyKind)cudaMemcpyHostToDevice,
         (cudaStream_t)*copy_h2d_stream));
     CUDA_CALL(cudaStreamSynchronize(*copy_h2d_stream));
@@ -604,7 +624,7 @@ bool RunRootCopyHost2DeviceLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }
@@ -638,7 +658,7 @@ bool RunNonRootCopyHost2DeviceLoopOnce() {
     CopyHost2Device(task);
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
   }
   return true;
 }

@@ -28,7 +28,7 @@ namespace mxnet {
 namespace {
 
 std::atomic_int op_count;
-const auto MX_EXEC_CTX = Context::CPU();
+const auto MX_EXEC_CTX = Context();
 const auto MX_FUNC_PROP = FnProperty::kCPUPrioritized;
 
 // struct to hold parameters for pushpull with MXNet Engine
@@ -126,7 +126,7 @@ extern "C" int byteps_mxnet_push_pull_async(NDArray* tensor, char* name,
   MX_API_END();
 }
 
-extern "C" void byteps_mxnet_declare_tensor(NDArray* tensor, char* name) {
+extern "C" void byteps_mxnet_declare_tensor(char* name) {
   std::string tensor_name = GetOpName("byteps", name);
   common::IsTensorDeclared(tensor_name);
   return;
