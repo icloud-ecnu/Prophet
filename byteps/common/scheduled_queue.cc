@@ -128,7 +128,7 @@ namespace byteps {
             }
             ///_sq includes so many elements named "byteps_parameter..."
             for(auto it = _sq.begin(); it != _sq.end(); ++it){
-                if( (*it -> tensor_name).find("gradient") == (*it -> tensorname).npos)
+                if( ((*it) -> tensor_name).find("gradient") == ((*it) -> tensorname).npos)
                     _sq.erase(it);
             }
             ///
