@@ -115,9 +115,9 @@ namespace byteps {
             BPS_LOG(INFO) << "priority=" << priority;
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
-            e->key = 0;
             auto search = _sq.find(e);
             if (search == _sq.end()) {
+                BPS_LOG(INFO) << "not found";
                 return nullptr;
             } else {
                 std::shared_ptr <TensorTableEntry> ret = *(search);
@@ -168,15 +168,15 @@ namespace byteps {
                 task = *it;
 
                 if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
+                    task = findTask(_mystack.top());
+                    if (task == nullptr) {
+                        return nullptr;
+                    }
                     if (task->priority == 0) {
                         _meetzero = 1;
                         BPS_LOG(DEBUG) << "Meet zero.";
                     }
                     if (!_meetzero) {
-                        task = findTask(_mystack.top());
-                        if (task == nullptr) {
-                            return nullptr;
-                        }
                         if (dynamic_size > task->len) {
                             dynamic_size -= task->len;
                             BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
