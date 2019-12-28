@@ -111,22 +111,24 @@ namespace byteps {
             }
         }
 
-        std::shared_ptr <TensorTableEntry> findTask(int priority) {
+        std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> ret;
             BPS_LOG(INFO) << "priority=" << priority;
             ret = _sq.find(priority);
             if (ret == _sq.end()) {
                 ret = nullptr;
+            } else if ((ret->tensor_name).find("gradient") == (ret->tensor_name).npos) {
+                ret = nullptr;
             }
-            BPS_LOG(INFO) << "ret=" << ret == nullptr ? "nullptr" : ret->priority;
+            BPS_LOG(INFO) << "ret=" << (ret == nullptr ? "nullptr" : ret->priority);
             return ret;
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
-            if (_qt == PUSH && tmp.find("gradient") != tmp.npos && !_dequeue) {
+            if (_qt == PUSH && !_dequeue) {
                 task = findTask(expected_priority * -1);
                 if (task == nullptr) {
                     return nullptr;

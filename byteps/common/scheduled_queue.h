@@ -57,6 +57,8 @@ namespace byteps {
 
             std::shared_ptr <TensorTableEntry> getTask(uint64_t key);
 
+            std::shared_ptr <TensorTableEntry> findTask(int priority);
+
             uint32_t pendingSize();
 
             void reportFinish(int size);
