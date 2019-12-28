@@ -114,14 +114,12 @@ namespace byteps {
         std::shared_ptr <TensorTableEntry> findTask(priority) {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> ret;
-            TensorTableEntry tte = TensorTableEntry();
-            tte.priority = priority;
-            tte.key = 0;
-            std::shared_ptr <TensorTableEntry> e(tte);
-            ret = _sq.find(e);
+            BPS_LOG(INFO) << "priority=" << priority;
+            ret = _sq.find(priority);
             if (ret == _sq.end()) {
                 ret = nullptr;
             }
+            BPS_LOG(INFO) << "ret=" << ret == nullptr ? "nullptr" : ret->priority;
             return ret;
         }
 
