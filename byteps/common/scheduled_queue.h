@@ -28,20 +28,8 @@
 namespace byteps {
     namespace common {
 
-        bool operator<(const std::shared_ptr <TensorTableEntry> a, const std::shared_ptr <TensorTableEntry> b) {
-            if (a->priority == b->priority) {
-                return (a->key < b->key);  // from the first partition to the last
-            }
-            return (a->priority > b->priority);  // from higher priority to lower
-        }
 
-        bool operator<(const int priority, const std::shared_ptr <TensorTableEntry> p) {
-            return (priority < p->priority);
-        }
 
-        bool operator<(const std::shared_ptr <TensorTableEntry> p, const int priority) {
-            return (p->priority < priority);
-        }
 
         class BytePSScheduledQueue {
         public:
@@ -64,7 +52,15 @@ namespace byteps {
             void reportFinish(int size);
 
         private:
-            std::multiset <std::shared_ptr<TensorTableEntry>> _sq;
+            struct comparator {
+                bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
+                    if (a->priority == b->priority) {
+                        return (a->key < b->key);  // from the first partition to the last
+                    }
+                    return (a->priority > b->priority);  // from higher priority to lower
+                }
+            };
+            std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _sq;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
             std::stack<int> _mystack;
             std::stack<int> _mystackpull;
