@@ -121,7 +121,7 @@ namespace byteps {
             } else if ((ret->tensor_name).find("gradient") == (ret->tensor_name).npos) {
                 ret = nullptr;
             }
-            BPS_LOG(INFO) << "ret=" << (ret == nullptr ? "nullptr" : ret->priority);
+            BPS_LOG(INFO) << "ret=" << (ret == nullptr ? "nullptr" : "" + ret->priority);
             return ret;
         }
 
