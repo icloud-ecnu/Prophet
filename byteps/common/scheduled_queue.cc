@@ -84,7 +84,14 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            _sq.insert(entry);
+            if (_qt == PUSH) {
+                std::string name = entry->tensor_name;
+                if (name.find("gradient") != name.npos) {
+                    _sq.insert(entry);
+                }
+            } else {
+                _sq.insert(entry);
+            }
             BPS_CHECK(entry->tensor_name != "");
             BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                            << " addTask: " << entry->tensor_name << " key: " << entry->key
@@ -126,12 +133,6 @@ namespace byteps {
             if (_sq.size() == 0) {
                 return nullptr;
             }
-            ///_sq includes so many elements named "byteps_parameter..."
-            for(auto it = _sq.begin(); it != _sq.end(); ++it){
-                if( ((*it) -> tensor_name).find("gradient") == ((*it) -> tensorname).npos)
-                    _sq.erase(it);
-            }
-            ///
             BPS_LOG(INFO) << "finding priority=" << priority << " in " << _sq.size() << " _sq.";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = std::find_if(_sq.begin(), _sq.end(), isTargetPriority(priority));
