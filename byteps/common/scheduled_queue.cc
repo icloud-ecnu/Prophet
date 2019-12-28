@@ -87,6 +87,7 @@ namespace byteps {
             if (_qt == PUSH) {
                 std::string name = entry->tensor_name;
                 if (name.find("gradient") != name.npos) {
+                    BPS_LOG(INFO) << "_qu == PUSH and find gradient, now inserting...";
                     _sq.insert(entry);
                 }
             } else {
@@ -124,7 +125,7 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                //BPS_LOG(INFO) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
+                BPS_LOG(INFO) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
                 return x->priority == Priority;
             }
         };
