@@ -154,7 +154,9 @@ namespace byteps {
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
+            BPS_LOG(INFO) << "In getTask()";
             if (_qt == PUSH && !_dequeue) {
+                BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
                 task = findTask(expected_priority * -1);
                 if (task == nullptr) {
                     return nullptr;
