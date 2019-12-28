@@ -111,16 +111,26 @@ namespace byteps {
             }
         }
 
+        struct isTargetPriority {
+            int Priority;
+
+            isTargetPriority(int priority) : Priority(priority) {}
+
+            bool operator()(std::shared_ptr <TensorTableEntry> x) { return x->priority == Priority; }
+        };
+
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
+            if (_sq.size() == 0) {
+                return nullptr;
+            }
             BPS_LOG(INFO) << "priority=" << priority << "in " << _sq.size();
-            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
-            e->priority = priority;
-            auto search = _sq.find(e);
-            if (search == _sq.end()) {
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
+            it = std::find_if(_sq.begin(), _sq.end(), isTargetPriority(priority));
+            if (it == _sq.end()) {
                 BPS_LOG(INFO) << "not found";
                 return nullptr;
             } else {
-                std::shared_ptr <TensorTableEntry> ret = *(search);
+                std::shared_ptr <TensorTableEntry> ret = *(it);
                 if ((ret->tensor_name).find("gradient") == (ret->tensor_name).npos) {
                     return nullptr;
                 } else {
