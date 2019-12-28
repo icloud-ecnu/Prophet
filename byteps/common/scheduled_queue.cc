@@ -126,10 +126,12 @@ namespace byteps {
             if (_sq.size() == 0) {
                 return nullptr;
             }
-            for(auto it = _sq.begin(); it < it != _sq.end(); ++it){
-                if((*it) -> tensor_name.find("gradient") == (*it).npos)
+            ///_sq includes so many elements named "byteps_parameter..."
+            for(auto it = _sq.begin(); it != _sq.end(); ++it){
+                if( ((*it) -> tensor_name).find("gradient") == (*it).npos)
                     _sq.erase(it);
             }
+            ///
             BPS_LOG(INFO) << "finding priority=" << priority << " in " << _sq.size() << " _sq.";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = std::find_if(_sq.begin(), _sq.end(), isTargetPriority(priority));
