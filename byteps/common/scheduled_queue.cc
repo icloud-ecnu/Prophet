@@ -114,7 +114,7 @@ namespace byteps {
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
             std::lock_guard <std::mutex> lock(_mutex);
             BPS_LOG(INFO) << "priority=" << priority;
-            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry)
+            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
             e->key = 0;
             auto search = _sq.find(e);
