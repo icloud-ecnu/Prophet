@@ -112,7 +112,6 @@ namespace byteps {
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
-            std::lock_guard <std::mutex> lock(_mutex);
             BPS_LOG(INFO) << "priority=" << priority;
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
@@ -208,8 +207,8 @@ namespace byteps {
                     if (_mystack.empty() && _meetzero) {
                         BPS_LOG(DEBUG) << "Clear.";
                         _dequeue = 0;
-
                         _pointer = 12;
+                        expected_priority = _grad_checkpoint[_pointer];
                         _stagestart = 1;
                         _meetzero = 0;
                         _sizepointer = 0;
@@ -326,6 +325,7 @@ namespace byteps {
 //                        BPS_LOG(TRACE) << "Clear.";
 //                        _dequeue = 0;
 //                        _pointer = 12;
+//                        expected_priority = _grad_checkpoint[_pointer];
 //                        _stagestart = 1;
 //                        _meetzero = 0;
 //                        _sizepointer = 1;//different from push process
