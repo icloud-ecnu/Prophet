@@ -117,7 +117,7 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                BPS_LOG(INFO) << "now comparing " << x->priority << "x name is:" << x -> tensor_name << " and " << Priority;
+                //BPS_LOG(INFO) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
                 return x->priority == Priority;
             }
         };
@@ -125,6 +125,10 @@ namespace byteps {
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
             if (_sq.size() == 0) {
                 return nullptr;
+            }
+            for(auto it = _sq.begin(); it < it != _sq.end(); ++it){
+                if((*it) -> tensor_name.find("gradient") == (*it).npos)
+                    _sq.erase(it);
             }
             BPS_LOG(INFO) << "finding priority=" << priority << " in " << _sq.size() << " _sq.";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
