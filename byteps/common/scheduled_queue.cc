@@ -147,6 +147,16 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_sq.size() > 0 || _ms.size() > 0)
                 BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
+
+            if (_qt == PUSH && !_dequeue && _ms.size() > 10) {
+                BPS_LOG(INFO) << "======BEGIN========";
+                for (auto i = _ms.begin(); i != _ms.end(); i++) {
+                    BPS_LOG(INFO) << (*i)->tensor_name;
+                }
+                BPS_LOG(INFO) << "======END========";
+                exit(-1);
+            }
+
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(DEBUG) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
