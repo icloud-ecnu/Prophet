@@ -166,7 +166,7 @@ namespace byteps {
                     _tensor_part[expected_priority] = task->total_partnum;
                 }
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                    _mystack.push(expected_priority);
+                    _mystack.push(expected_priority * -1);
                 }
                 expected_priority--;
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
