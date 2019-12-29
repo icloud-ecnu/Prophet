@@ -123,20 +123,20 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                BPS_LOG(INFO) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
+                BPS_LOG(DEBUG) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
                 return x->priority == Priority;
             }
         };
 
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
-            BPS_LOG(INFO) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
+            BPS_LOG(DEBUG) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = std::find_if(_ms.begin(), _ms.end(), isTargetPriority(priority));
             if (it == _ms.end()) {
-                BPS_LOG(INFO) << "not found"; // TODO if exists bug
+                BPS_LOG(DEBUG) << "not found"; // TODO if exists bug
                 return it;
             } else {
-                BPS_LOG(INFO) << "(*it)=" << (*it)->priority;
+                BPS_LOG(DEBUG) << "(*it)=" << (*it)->priority;
                 return it;
             }
         }
@@ -148,7 +148,7 @@ namespace byteps {
             if (_sq.size() > 0 || _ms.size() > 0)
                 BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
+                BPS_LOG(DEBUG) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
