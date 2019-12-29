@@ -203,7 +203,7 @@ namespace byteps {
                     _dooropen--;
                     _ms.erase(msit);
                     _mystack.pop();
-                    f) << "PUSH gradient after 0: " << task->tensor_name;
+                    BPS_LOG(DEBUG) << "PUSH gradient after 0: " << task->tensor_name;
                 }
                 if (_mystack.empty() && _meetzero) {
                     BPS_LOG(DEBUG) << "Clear.";
