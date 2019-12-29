@@ -139,10 +139,11 @@ namespace byteps {
                 BPS_LOG(INFO) << "not found"; // TODO if exists bug
                 return it;
             } else if ((*it)->priority != priority) {
+                BPS_LOG(INFO) << "(*it)=" << (*it)->priority << ", ignore.";
                 return _ms.end();
             } else {
                 BPS_CHECK_EQ((*it)->priority, priority);
-                BPS_LOG(INFO) << "(*it)=" << (*it)->priority;
+                BPS_LOG(INFO) << "found.";
                 return it;
             }
         }
