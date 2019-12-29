@@ -146,7 +146,7 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_sq.size() > 0 || _ms.size() > 0)
-                BPS_LOG(INFO) << "In getTask(), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
+                BPS_LOG(INFO) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
@@ -165,6 +165,7 @@ namespace byteps {
                 return nullptr;
             }
             for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+
                 if ((*it)->ready_event) {
                     if (!(*it)->ready_event->Ready()) {
                         continue;
@@ -184,6 +185,7 @@ namespace byteps {
                 task = *it;
 
                 if (_qt == PUSH && _ms.size() > 0) {
+                    BPS_LOG(INFO) << "ignore it, try msit.";
                     msit = findTask(_mystack.top());
                     if (msit == _ms.end()) {
                         return nullptr;
@@ -191,17 +193,18 @@ namespace byteps {
                     task = *msit;
                     if (task->priority == 0) {
                         _meetzero = 1;
-                        BPS_LOG(DEBUG) << "Meet zero.";
+                        BPS_LOG(INFO) << "Meet zero.";
                     }
                     if (!_meetzero) {
                         if (dynamic_size > task->len) {
                             dynamic_size -= task->len;
-                            BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
+                            BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
                                            << dynamic_size;
                             _ms.erase(msit);
                             _mystack.pop();
-                            BPS_LOG(DEBUG) << "PUSH gradient before 0: " << tmp;
+                            BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
                         } else {
+                            BPS_LOG(INFO) << "No left space";
                             _dequeue = 0;
                             _pointer--;
                             _stagestart = 1;
@@ -209,7 +212,7 @@ namespace byteps {
                             break;
                         }
                     } else if (!_dooropen) {
-                        BPS_LOG(DEBUG) << "push door is closed.";
+                        BPS_LOG(INFO) << "push door is closed.";
                         break;
                     } else {
                         msit = findTask(_mystack.top());
@@ -220,10 +223,10 @@ namespace byteps {
                         _dooropen--;
                         _ms.erase(msit);
                         _mystack.pop();
-                        BPS_LOG(DEBUG) << "PUSH gradient after 0: " << tmp;
+                        BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
                     }
                     if (_mystack.empty() && _meetzero) {
-                        BPS_LOG(DEBUG) << "Clear.";
+                        BPS_LOG(INFO) << "Clear.";
                         _dequeue = 0;
                         _pointer = 12;
                         expected_priority = _grad_checkpoint[_pointer];
