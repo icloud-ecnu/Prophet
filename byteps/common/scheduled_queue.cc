@@ -219,8 +219,8 @@ namespace byteps {
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
-            } else if (_qt == PULL) {
-                if (_ms.size() > 0 && _dooropen > 0) {
+            } else if (_qt == PULL && _ms.size() > 0) {
+                if (_dooropen > 0) {
                     task = *(_ms.begin());
                     _dooropen--;
                     return task;
