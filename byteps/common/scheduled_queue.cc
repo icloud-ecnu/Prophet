@@ -155,7 +155,7 @@ namespace byteps {
             if (_sq.size() > 0 || _ms.size() > 0)
                 BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                if (_tensor_part[expected_priority] != 0) {
+                if (_tensor_part[expected_priority] == 0) {
                     BPS_LOG(DEBUG) << "Call findTask() with " << (expected_priority * -1);
                     msit = findTask(expected_priority * -1);
                     if (msit == _ms.end()) {
@@ -163,12 +163,10 @@ namespace byteps {
                     }
                     task = *msit;
 
-                    if (_tensor_part[expected_priority] == 0) {
-                        _tensor_part[expected_priority] = task->total_partnum;
-                    }
+                    _tensor_part[expected_priority] = task->total_partnum;
                 }
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                    _mystack.push(task->priority);
+                    _mystack.push(expected_priority);
                 }
                 expected_priority--;
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
