@@ -125,18 +125,12 @@ namespace byteps {
             }
         };
 
-        struct comparator {
-            bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
-                return (a->priority > b->priority);
-            }
-        };
-
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
 
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
-            it = _ms.lower_bound(_ms.begin(), _ms.end(), e, comparator);
+            it = _ms.lower_bound(e);
             if (it == _ms.end()) {
                 return it;
             } else if ((*it)->priority != priority) {
