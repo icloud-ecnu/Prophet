@@ -45,7 +45,7 @@ namespace byteps {
 
             std::shared_ptr <TensorTableEntry> getTask(uint64_t key);
 
-            std::shared_ptr <TensorTableEntry> findTask(int priority);
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator findTask(int priority);
 
             uint32_t pendingSize();
 
@@ -57,7 +57,8 @@ namespace byteps {
                     return (a->priority < b->priority);
                 }
             };
-            std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _sq;
+            std::vector <std::shared_ptr<TensorTableEntry>> _sq;
+            std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
             std::stack<int> _mystack;
             std::stack<int> _mystackpull;

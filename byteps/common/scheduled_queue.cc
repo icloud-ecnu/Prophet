@@ -84,14 +84,10 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH) {
-                std::string name = entry->tensor_name;
-                if (name.find("gradient") != name.npos) {
-                    BPS_LOG(INFO) << "_qu == PUSH and find gradient, now inserting...";
-                    _sq.insert(entry);
-                }
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                _ms.insert(entry);
             } else {
-                _sq.insert(entry);
+                _sq.push_back(entry);
             }
             BPS_CHECK(entry->tensor_name != "");
             BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
@@ -130,37 +126,31 @@ namespace byteps {
             }
         };
 
-        std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::findTask(int priority) {
-            if (_sq.size() == 0) {
-                return nullptr;
-            }
-            BPS_LOG(INFO) << "finding priority=" << priority << " in " << _sq.size() << " _sq.";
+        std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
+            BPS_LOG(INFO) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = std::find_if(_sq.begin(), _sq.end(), isTargetPriority(priority));
             if (it == _sq.end()) {
-                BPS_LOG(INFO) << "not found";
-                return nullptr;
+                BPS_LOG(INFO) << "not found"; // TODO if exists bug
+                return it;
             } else {
-                std::shared_ptr <TensorTableEntry> ret = *(it);
-                if ((ret->tensor_name).find("gradient") == (ret->tensor_name).npos) {
-                    return nullptr;
-                } else {
-                    BPS_LOG(INFO) << "ret=" << ret->priority;
-                    return ret;
-                }
+                BPS_LOG(INFO) << "(*it)=" << (*it)->priority;
+                return it;
             }
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             BPS_LOG(INFO) << "In getTask()";
-            if (_qt == PUSH && !_dequeue) {
+            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
-                task = findTask(expected_priority * -1);
-                if (task == nullptr) {
+                msit = findTask(expected_priority * -1);
+                if (msit == _ms.end()) {
                     return nullptr;
                 }
+                task = *msit;
                 for (int x = 0; x < task->total_partnum; x++) {
                     _mystack.push(task->priority);
                 }
@@ -190,11 +180,12 @@ namespace byteps {
                 std::string tmp = (*it)->tensor_name;
                 task = *it;
 
-                if (_qt == PUSH && tmp.find("gradient") != tmp.npos) {
-                    task = findTask(_mystack.top());
-                    if (task == nullptr) {
+                if (_qt == PUSH && _ms.size() > 0) {
+                    msit = findTask(_mystack.top());
+                    if (msit == _ms.end()) {
                         return nullptr;
                     }
+                    task = *msit;
                     if (task->priority == 0) {
                         _meetzero = 1;
                         BPS_LOG(DEBUG) << "Meet zero.";
@@ -204,7 +195,7 @@ namespace byteps {
                             dynamic_size -= task->len;
                             BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
                                            << dynamic_size;
-                            _sq.erase(it);
+                            _ms.erase(msit);
                             _mystack.pop();
                             BPS_LOG(DEBUG) << "PUSH gradient before 0: " << tmp;
                         } else {
@@ -218,12 +209,13 @@ namespace byteps {
                         BPS_LOG(DEBUG) << "push door is closed.";
                         break;
                     } else {
-                        task = findTask(_mystack.top());
-                        if (task == nullptr) {
+                        msit = findTask(_mystack.top());
+                        if (msit == _ms.end()) {
                             return nullptr;
                         }
+                        task = *msit;
                         _dooropen--;
-                        _sq.erase(it);
+                        _ms.erase(msit);
                         _mystack.pop();
                         BPS_LOG(DEBUG) << "PUSH gradient after 0: " << tmp;
                     }
