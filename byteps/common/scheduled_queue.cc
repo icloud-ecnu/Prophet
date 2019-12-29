@@ -130,8 +130,11 @@ namespace byteps {
 
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
             BPS_LOG(DEBUG) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
+            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
+            e->priority = priority;
+
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
-            it = std::find_if(_ms.begin(), _ms.end(), isTargetPriority(priority));
+            it = _ms.lower_bound(e);
             if (it == _ms.end()) {
                 BPS_LOG(DEBUG) << "not found"; // TODO if exists bug
                 return it;
@@ -147,16 +150,6 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_sq.size() > 0 || _ms.size() > 0)
                 BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
-
-            if (_qt == PUSH && !_dequeue && _ms.size() > 10) {
-                BPS_LOG(INFO) << "======BEGIN========";
-                for (auto i = _ms.begin(); i != _ms.end(); i++) {
-                    BPS_LOG(INFO) << (*i)->tensor_name;
-                }
-                BPS_LOG(INFO) << "======END========";
-                exit(-1);
-            }
-
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(DEBUG) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
