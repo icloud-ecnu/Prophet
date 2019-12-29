@@ -85,8 +85,10 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                BPS_LOG(INFO) << "insert to _ms:" << entry->tensor_name;
                 _ms.insert(entry);
             } else {
+                BPS_LOG(INFO) << "push_back to _sq:" << entry->tensor_name;
                 _sq.push_back(entry);
             }
             BPS_CHECK(entry->tensor_name != "");
@@ -143,7 +145,8 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            BPS_LOG(INFO) << "In getTask()";
+            if (_sq.size() > 0 || _ms.size() > 0)
+                BPS_LOG(INFO) << "In getTask(), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
