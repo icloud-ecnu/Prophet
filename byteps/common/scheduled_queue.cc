@@ -129,21 +129,21 @@ namespace byteps {
         };
 
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
-            BPS_LOG(INFO) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
+            //BPS_LOG(INFO) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
 
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = _ms.lower_bound(e);
             if (it == _ms.end()) {
-                BPS_LOG(INFO) << "not found"; // TODO if exists bug
+                //BPS_LOG(INFO) << "not found"; // TODO if exists bug
                 return it;
             } else if ((*it)->priority != priority) {
-                BPS_LOG(INFO) << "(*it)=" << (*it)->priority << ", ignore.";
+               // BPS_LOG(INFO) << "(*it)=" << (*it)->priority << ", ignore.";
                 return _ms.end();
             } else {
                 BPS_CHECK_EQ((*it)->priority, priority);
-                BPS_LOG(INFO) << "found.";
+                //BPS_LOG(INFO) << "found.";
                 return it;
             }
         }
