@@ -221,7 +221,9 @@ namespace byteps {
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
                 if (_dooropen > 0) {
-                    task = *(_ms.begin());
+                    auto top = _ms.begin();
+                    task = *top;
+                    _ms.erase(top);
                     _dooropen--;
                     return task;
                 } else {
