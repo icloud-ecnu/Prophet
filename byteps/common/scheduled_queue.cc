@@ -223,19 +223,19 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
-//                BPS_LOG(INFO) << "in pull, _ms.size()=" << _ms.size();
+                BPS_LOG(INFO) << "in pull, _ms.size()=" << _ms.size();
                 if (_dooropen > 0) {
                     auto top = _ms.begin();
                     if (top == _ms.end()) {
                         return nullptr;
                     }
                     task = *top;
-//                    BPS_LOG(INFO) << _dooropen << " door open, get " << task -> tensor_name;
+                    BPS_LOG(INFO) << _dooropen << " door open, get " << task -> tensor_name;
                     _ms.erase(top);
                     _dooropen--;
                     return task;
                 } else {
-//                    BPS_LOG(INFO) << "door closed";
+                    BPS_LOG(INFO) << "door closed";
                     return nullptr;
                 }
             } else {
