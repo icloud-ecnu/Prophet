@@ -86,6 +86,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
+                _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
             }
@@ -128,17 +129,20 @@ namespace byteps {
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
-            BPS_LOG(INFO) << "========BEGIN========";
-            for (auto i = _ms.begin(); i != _ms.end(); i++) {
-                BPS_LOG(INFO) << (*i) -> tensor_name;
-            }
-            BPS_LOG(INFO) << "========END========";
+//            BPS_LOG(INFO) << "========BEGIN========";
+//            for (auto i = _ms.begin(); i != _ms.end(); i++) {
+//                BPS_LOG(INFO) << (*i) -> tensor_name;
+//            }
+//            BPS_LOG(INFO) << "========END========";
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             it = _ms.lower_bound(e);
-            BPS_LOG(INFO) << ((it == _ms.end()) ? "nullptr" : (*it)->tensor_name);
+//            BPS_LOG(INFO) << ((it == _ms.end()) ? "nullptr" : (*it)->tensor_name);
             if (it == _ms.end()) {
                 return it;
             } else if ((*it)->priority != priority) {
+//                if (_tensor_part[priority * -1] == 0) {
+//                    _tensor_part[priority * -1] = (*it)->total_partnum;
+//                }
                 return _ms.end();
             } else {
                 BPS_CHECK_EQ((*it)->priority, priority);
