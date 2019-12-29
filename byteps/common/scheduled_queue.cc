@@ -85,10 +85,10 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
-                BPS_LOG(INFO) << "insert to _ms:" << entry->tensor_name;
+                BPS_LOG(DEBUG) << "insert to _ms:" << entry->tensor_name;
                 _ms.insert(entry);
             } else {
-                BPS_LOG(INFO) << "push_back to _sq:" << entry->tensor_name;
+                BPS_LOG(DEBUG) << "push_back to _sq:" << entry->tensor_name;
                 _sq.push_back(entry);
             }
             BPS_CHECK(entry->tensor_name != "");
@@ -146,7 +146,7 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_sq.size() > 0 || _ms.size() > 0)
-                BPS_LOG(INFO) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
+                BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "Call findTask() with " << (expected_priority * -1);
                 msit = findTask(expected_priority * -1);
@@ -165,7 +165,7 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
-                BPS_LOG(INFO) << "ignore it, try msit.";
+                BPS_LOG(DEBUG) << "ignore it, try msit.";
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -173,27 +173,27 @@ namespace byteps {
                 task = *msit;
                 if (task->priority == 0) {
                     _meetzero = 1;
-                    BPS_LOG(INFO) << "Meet zero.";
+                    BPS_LOG(DEBUG) << "Meet zero.";
                 }
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
-                        BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
+                        BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
                                       << dynamic_size;
                         _ms.erase(msit);
                         _mystack.pop();
-                        BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
+                        BPS_LOG(DEBUG) << "PUSH gradient before 0: " << task->tensor_name;
                     } else {
-                        BPS_LOG(INFO) << "No left space";
+                        BPS_LOG(DEBUG) << "No left space";
                         _dequeue = 0;
                         _pointer--;
                         _stagestart = 1;
                         BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                        break;
+                        return nullptr;
                     }
                 } else if (!_dooropen) {
-                    BPS_LOG(INFO) << "push door is closed.";
-                    break;
+                    BPS_LOG(DEBUG) << "push door is closed.";
+                    return nullptr;
                 } else {
                     msit = findTask(_mystack.top());
                     if (msit == _ms.end()) {
@@ -203,10 +203,10 @@ namespace byteps {
                     _dooropen--;
                     _ms.erase(msit);
                     _mystack.pop();
-                    BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
+                    f) << "PUSH gradient after 0: " << task->tensor_name;
                 }
                 if (_mystack.empty() && _meetzero) {
-                    BPS_LOG(INFO) << "Clear.";
+                    BPS_LOG(DEBUG) << "Clear.";
                     _dequeue = 0;
                     _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
