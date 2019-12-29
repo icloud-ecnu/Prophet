@@ -164,84 +164,99 @@ namespace byteps {
                 }
                 return nullptr;
             }
-            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
-
-                if ((*it)->ready_event) {
-                    if (!(*it)->ready_event->Ready()) {
-                        continue;
+            if (_qt == PUSH && _ms.size() > 0) {
+                BPS_LOG(INFO) << "ignore it, try msit.";
+                msit = findTask(_mystack.top());
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
+                task = *msit;
+                if (task->priority == 0) {
+                    _meetzero = 1;
+                    BPS_LOG(INFO) << "Meet zero.";
+                }
+                if (!_meetzero) {
+                    if (dynamic_size > task->len) {
+                        dynamic_size -= task->len;
+                        BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
+                                      << dynamic_size;
+                        _ms.erase(msit);
+                        _mystack.pop();
+                        BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
+                    } else {
+                        BPS_LOG(INFO) << "No left space";
+                        _dequeue = 0;
+                        _pointer--;
+                        _stagestart = 1;
+                        BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+                        break;
                     }
-                }
-                if (_is_scheduled) {
-                    if ((*it)->len > _credits)
-                        continue;
-                }
-                if (_rt) {
-                    if (!_rt->IsKeyReady((*it)->key)) {
-                        continue;
-                    }
-                    _rt->ClearReadyCount((*it)->key);
-                }
-                std::string tmp = (*it)->tensor_name;
-                task = *it;
-
-                if (_qt == PUSH && _ms.size() > 0) {
-                    BPS_LOG(INFO) << "ignore it, try msit.";
+                } else if (!_dooropen) {
+                    BPS_LOG(INFO) << "push door is closed.";
+                    break;
+                } else {
                     msit = findTask(_mystack.top());
                     if (msit == _ms.end()) {
                         return nullptr;
                     }
                     task = *msit;
-                    if (task->priority == 0) {
-                        _meetzero = 1;
-                        BPS_LOG(INFO) << "Meet zero.";
-                    }
-                    if (!_meetzero) {
-                        if (dynamic_size > task->len) {
-                            dynamic_size -= task->len;
-                            BPS_LOG(INFO) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
-                                           << dynamic_size;
-                            _ms.erase(msit);
-                            _mystack.pop();
-                            BPS_LOG(INFO) << "PUSH gradient before 0: " << tmp;
-                        } else {
-                            BPS_LOG(INFO) << "No left space";
-                            _dequeue = 0;
-                            _pointer--;
-                            _stagestart = 1;
-                            BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                            break;
+                    _dooropen--;
+                    _ms.erase(msit);
+                    _mystack.pop();
+                    BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
+                }
+                if (_mystack.empty() && _meetzero) {
+                    BPS_LOG(INFO) << "Clear.";
+                    _dequeue = 0;
+                    _pointer = 12;
+                    expected_priority = _grad_checkpoint[_pointer];
+                    _stagestart = 1;
+                    _meetzero = 0;
+                    _sizepointer = 0;
+                    _dooropen = 11;
+                }
+                task->ready_event = nullptr;
+                recorderTs(task);
+                return task;
+            } else {
+                for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+
+                    if ((*it)->ready_event) {
+                        if (!(*it)->ready_event->Ready()) {
+                            continue;
                         }
-                    } else if (!_dooropen) {
-                        BPS_LOG(INFO) << "push door is closed.";
-                        break;
-                    } else {
-                        msit = findTask(_mystack.top());
-                        if (msit == _ms.end()) {
-                            return nullptr;
+                    }
+                    if (_is_scheduled) {
+                        if ((*it)->len > _credits)
+                            continue;
+                    }
+                    if (_rt) {
+                        if (!_rt->IsKeyReady((*it)->key)) {
+                            continue;
                         }
-                        task = *msit;
-                        _dooropen--;
-                        _ms.erase(msit);
-                        _mystack.pop();
-                        BPS_LOG(INFO) << "PUSH gradient after 0: " << tmp;
+                        _rt->ClearReadyCount((*it)->key);
                     }
-                    if (_mystack.empty() && _meetzero) {
-                        BPS_LOG(INFO) << "Clear.";
-                        _dequeue = 0;
-                        _pointer = 12;
-                        expected_priority = _grad_checkpoint[_pointer];
-                        _stagestart = 1;
-                        _meetzero = 0;
-                        _sizepointer = 0;
-                        _dooropen = 11;
+                    std::string tmp = (*it)->tensor_name;
+                    task = *it;
+                    if (_is_scheduled) {
+                        _credits -= task->len;
                     }
+                    _sq.erase(it);
+                    BPS_CHECK(task->tensor_name != "");
+                    BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
+                                   << " getTask: " << task->tensor_name << " key: " << task->key
+                                   << " rank: " << BytePSGlobal::GetLocalRank();
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
                 }
-                // TODO: check if the multiset works
-                // TODO: use multiset to update the PULL stage
-                // TODO: make it faster
+            }
+
+            return nullptr;
+        }
+// TODO: check if the multiset works
+        // TODO: use multiset to update the PULL stage
+        // TODO: make it faster
 //                if (_qt == PULL && tmp.find("gradient") != tmp.npos) {
 //                    if (_dequeue != 1 && _sizepointer < 13) {
 //                        bool taskisstart = task->priority == -1 * _grad_checkpoint[_pointer] && _stagestart;
@@ -363,22 +378,6 @@ namespace byteps {
 //                    recorderTs(task);
 //                    return task;
 //                }
-
-                if (_is_scheduled) {
-                    _credits -= task->len;
-                }
-                _sq.erase(it);
-                BPS_CHECK(task->tensor_name != "");
-                BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
-                               << " getTask: " << task->tensor_name << " key: " << task->key
-                               << " rank: " << BytePSGlobal::GetLocalRank();
-                task->ready_event = nullptr;
-                recorderTs(task);
-                return task;
-            }
-            return nullptr;
-        }
-
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
             BPS_CHECK(!_is_scheduled);
