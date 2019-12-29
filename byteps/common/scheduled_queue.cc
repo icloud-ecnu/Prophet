@@ -85,6 +85,9 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                if (_qt == PULL) {
+                    BPS_LOG(INFO) << "in pull, insert" << entry -> tensor_name;
+                }
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
@@ -220,16 +223,25 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
+                BPS_LOG(INFO) << "in pull, _ms.size()=" << _ms.size();
                 if (_dooropen > 0) {
                     auto top = _ms.begin();
+                    if (top == _ms.end()) {
+                        return nullptr;
+                    }
                     task = *top;
+                    BPS_LOG(INFO) << "door open" << _dooropen << ", get " << task -> tensor_name;
                     _ms.erase(top);
                     _dooropen--;
                     return task;
                 } else {
+                    BPS_LOG(INFO) << "door closed";
                     return nullptr;
                 }
             } else {
+                if (_qt == PULL) {
+                    BPS_LOG(INFO) << "in pull, else...";
+                }
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {
@@ -309,6 +321,7 @@ namespace byteps {
             } else if (_qt == PULL) {
                 if (_dooropen < 11) {
                     _dooropen++;
+                    BPS_LOG(INFO) << "_dooropen++";
                 }
             }
             return;
