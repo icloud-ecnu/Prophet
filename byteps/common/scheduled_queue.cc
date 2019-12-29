@@ -85,10 +85,8 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
-                BPS_LOG(DEBUG) << "insert to _ms:" << entry->tensor_name;
                 _ms.insert(entry);
             } else {
-                BPS_LOG(DEBUG) << "push_back to _sq:" << entry->tensor_name;
                 _sq.push_back(entry);
             }
             BPS_CHECK(entry->tensor_name != "");
@@ -123,27 +121,28 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                BPS_LOG(DEBUG) << "now comparing " << x->priority  << " and " << Priority << "x name is:" << x -> tensor_name;
                 return x->priority == Priority;
             }
         };
 
+        struct comparator {
+            bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
+                return (a->priority > b->priority);
+            }
+        };
+
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
-            //BPS_LOG(INFO) << "finding priority=" << priority << " in " << _ms.size() << " _ms.";
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
 
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
-            it = _ms.lower_bound(e);
+            it = _ms.lower_bound(_ms.begin(), _ms.end(), e, comparator);
             if (it == _ms.end()) {
-                //BPS_LOG(INFO) << "not found"; // TODO if exists bug
                 return it;
             } else if ((*it)->priority != priority) {
-               // BPS_LOG(INFO) << "(*it)=" << (*it)->priority << ", ignore.";
                 return _ms.end();
             } else {
                 BPS_CHECK_EQ((*it)->priority, priority);
-                //BPS_LOG(INFO) << "found.";
                 return it;
             }
         }
@@ -152,19 +151,25 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_sq.size() > 0 || _ms.size() > 0)
-                BPS_LOG(DEBUG) << "In getTask(" << _qt << "), _sq size=" << _sq.size() << " and _ms size=" << _ms.size();
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                if (_tensor_part[expected_priority] == 0) {
-                    BPS_LOG(DEBUG) << "Call findTask() with " << (expected_priority * -1);
-                    msit = findTask(expected_priority * -1);
-                    if (msit == _ms.end()) {
+                while (_tensor_part[expected_priority] > 0) {
+                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                        _mystack.push(expected_priority * -1);
+                    }
+                    expected_priority--;
+                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+                        _dequeue = 1;
+                        dynamic_size = _backward_exec[_sizepointer++];
                         return nullptr;
                     }
-                    task = *msit;
-
-                    _tensor_part[expected_priority] = task->total_partnum;
                 }
+                msit = findTask(expected_priority * -1);
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
+                task = *msit;
+
+                _tensor_part[expected_priority] = task->total_partnum;
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                     _mystack.push(expected_priority * -1);
                 }
@@ -176,7 +181,6 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
-                BPS_LOG(DEBUG) << "ignore it, try msit.";
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -184,18 +188,13 @@ namespace byteps {
                 task = *msit;
                 if (task->priority == 0) {
                     _meetzero = 1;
-                    BPS_LOG(DEBUG) << "Meet zero.";
                 }
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
-                        BPS_LOG(DEBUG) << "dequeue element: " << task->tensor_name << "dynamic size now is: "
-                                      << dynamic_size;
                         _ms.erase(msit);
                         _mystack.pop();
-                        BPS_LOG(DEBUG) << "PUSH gradient before 0: " << task->tensor_name;
                     } else {
-                        BPS_LOG(DEBUG) << "No left space";
                         _dequeue = 0;
                         _pointer--;
                         _stagestart = 1;
@@ -203,7 +202,6 @@ namespace byteps {
                         return nullptr;
                     }
                 } else if (!_dooropen) {
-                    BPS_LOG(DEBUG) << "push door is closed.";
                     return nullptr;
                 } else {
                     msit = findTask(_mystack.top());
@@ -214,10 +212,8 @@ namespace byteps {
                     _dooropen--;
                     _ms.erase(msit);
                     _mystack.pop();
-                    BPS_LOG(DEBUG) << "PUSH gradient after 0: " << task->tensor_name;
                 }
                 if (_mystack.empty() && _meetzero) {
-                    BPS_LOG(DEBUG) << "Clear.";
                     _dequeue = 0;
                     _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
@@ -247,7 +243,6 @@ namespace byteps {
                         }
                         _rt->ClearReadyCount((*it)->key);
                     }
-                    std::string tmp = (*it)->tensor_name;
                     task = *it;
                     if (_is_scheduled) {
                         _credits -= task->len;
