@@ -230,7 +230,7 @@ namespace byteps {
                         return nullptr;
                     }
                     task = *top;
-                    BPS_LOG(INFO) << "door open" << _dooropen << ", get " << task -> tensor_name;
+                    BPS_LOG(INFO) << _dooropen << " door open, get " << task -> tensor_name;
                     _ms.erase(top);
                     _dooropen--;
                     return task;
@@ -239,9 +239,6 @@ namespace byteps {
                     return nullptr;
                 }
             } else {
-                if (_qt == PULL) {
-                    BPS_LOG(INFO) << "in pull, else...";
-                }
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {
@@ -321,8 +318,8 @@ namespace byteps {
             } else if (_qt == PULL) {
                 if (_dooropen < 11) {
                     _dooropen++;
-                    BPS_LOG(INFO) << "_dooropen++";
                 }
+                BPS_LOG(INFO) << "now we have " << _dooropen << " doors";
             }
             return;
         }
