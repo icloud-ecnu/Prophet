@@ -54,7 +54,7 @@ namespace byteps {
         private:
             struct comparator {
                 bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
-                    return (a->priority < b->priority);
+                    return (a->priority > b->priority);
                 }
             };
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
