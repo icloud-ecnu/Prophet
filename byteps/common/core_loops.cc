@@ -168,7 +168,7 @@ bool RunCoordinateLoopOnce(QueueType this_op) {
                    << "Signal=" << sig << ", rank=" << rank << ", key=" << key;
 
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -297,7 +297,7 @@ bool RunRootNcclLoopOnce() {
     BytePSGlobal::GetNccl()->EnqueueGroup(nccl_entry);
   } else {
     NCCLCHECK(ncclGroupEnd());
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
 
   return true;
@@ -357,7 +357,7 @@ bool RunSyncNcclOnce() {
     BPS_LOG(TRACE) << "Finished NCCL Group size=" << nccl_entry->tasks.size()
                    << " rank=" << BytePSGlobal::GetLocalRank();
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -425,7 +425,7 @@ bool RunCopyDevice2HostLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -478,7 +478,7 @@ bool RunPcieReduceLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -516,7 +516,7 @@ bool RunPushLoopOnce() {
       FinishOrProceed(task);
     }
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -552,7 +552,7 @@ bool RunPullLoopOnce() {
                                    FinishOrProceed(task);
                                  });
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -624,7 +624,7 @@ bool RunRootCopyHost2DeviceLoopOnce() {
 
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
@@ -658,7 +658,7 @@ bool RunNonRootCopyHost2DeviceLoopOnce() {
     CopyHost2Device(task);
     FinishOrProceed(task);
   } else {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(10));
   }
   return true;
 }
