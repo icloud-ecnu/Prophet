@@ -247,6 +247,8 @@ namespace byteps {
                 }
                 task = *top;
                 _ms.erase(top);
+                task->ready_event = nullptr;
+                recorderTs(task);
                 return task;
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
