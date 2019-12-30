@@ -24,11 +24,14 @@ namespace byteps {
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
             if (batchsize > 32) {
-                BPS_LOG(INFO) << "batch size > 32, expand the exec time";
                 for (int i = 0; i < 13; i++) {
                     _backward_exec[i] *= batchsize/32;
                     _forward_exec[i] *= batchsize/32;
                 }
+            }
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] *= B;
+                _forward_exec[i] *= B;
             }
 
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
