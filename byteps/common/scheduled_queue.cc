@@ -75,6 +75,7 @@ namespace byteps {
                     if (BytePSGlobal::IsRootDevice()) {
                         _rt = BytePSGlobal::GetPullTable();
                     }
+                    _dooropen = 50;
                     _sizepointer = 1;
                     break;
                 default:
