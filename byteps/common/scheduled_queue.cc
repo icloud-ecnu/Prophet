@@ -241,7 +241,10 @@ namespace byteps {
 ////                    BPS_LOG(INFO) << "door closed";
 //                    return nullptr;
 //                }
-                auto top = _ms.rbegin();
+                auto top = _ms.begin();
+                if (top == _ms.end()) {
+                    return nullptr;
+                }
                 task = *top;
                 _ms.erase(top);
                 return task;
