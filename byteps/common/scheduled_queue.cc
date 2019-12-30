@@ -225,22 +225,26 @@ namespace byteps {
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
 //                BPS_LOG(INFO) << "in pull, _ms.size()=" << _ms.size() << ", door=" << _dooropen;
-                if (_dooropen > 0) {
-                    auto top = _ms.begin();
-                    if (top == _ms.end()) {
-                        return nullptr;
-                    }
-                    task = *top;
-//                    BPS_LOG(INFO) << _dooropen << " door open, get " << task -> tensor_name;
-                    _ms.erase(top);
-                    _dooropen--;
-                    task->ready_event = nullptr;
-                    recorderTs(task);
-                    return task;
-                } else {
-//                    BPS_LOG(INFO) << "door closed";
-                    return nullptr;
-                }
+//                if (_dooropen > 0) {
+//                    auto top = _ms.begin();
+//                    if (top == _ms.end()) {
+//                        return nullptr;
+//                    }
+//                    task = *top;
+////                    BPS_LOG(INFO) << _dooropen << " door open, get " << task -> tensor_name;
+//                    _ms.erase(top);
+//                    _dooropen--;
+//                    task->ready_event = nullptr;
+//                    recorderTs(task);
+//                    return task;
+//                } else {
+////                    BPS_LOG(INFO) << "door closed";
+//                    return nullptr;
+//                }
+                auto top = _ms.rbegin();
+                task = *top;
+                _ms.erase(top);
+                return task;
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
