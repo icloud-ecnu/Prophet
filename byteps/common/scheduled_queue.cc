@@ -203,7 +203,7 @@ namespace byteps {
                     } else {
                         bool find_small = false;
                         for (auto stackit = _mystack.begin(); stackit != _mystack.end(); stackit++) {
-                            msit = findTask(*it);
+                            msit = findTask(*stackit);
                             if (msit == _ms.end()) {
                                 break;
                             }
