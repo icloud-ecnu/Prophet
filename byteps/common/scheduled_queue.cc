@@ -98,11 +98,8 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                if (_qt == PULL && _tensor_part[entry->priority * -1] == 0) {
-                    pull_num += entry->total_partnum;
-                }
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
@@ -257,39 +254,38 @@ namespace byteps {
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
-            } else if (_qt == PULL && _ms.size() > 0) {
-                if (_sizepointer == 12) {
-                    _meetzero = 1;
-                }
-                if (!_meetzero) {
-                    task = *_ms.begin();
-                    if (task->len < dynamic_size) {
-                        dynamic_size -= task->len;
-                        _ms.erase(_ms.begin());
-                        _dooropen++;
-
-                        task->ready_event = nullptr;
-                        recorderTs(task);
-                        return task;
-                    } else {
-                        if (_dooropen) {
-                            return nullptr;
-                        } else {
-                            if (_sizepointer < 12) {
-                                _sizepointer++;
-                                dynamic_size = _backward_exec[_sizepointer];
-                            }
-
-                            return nullptr;
-                        }
-                    }
-                } else {
-                    task = *_ms.begin();
-                    _ms.erase(_ms.begin());
+            } else if (_qt == PULL && BytePSGlobal::pushed_so_can_pull.size() > 0) {
+                TensorTableEntry entry = *BytePSGlobal::pushed_so_can_pull.begin();
+                task = std::shared_ptr<TensorTableEntry> e(entry);
+                if (task->len < dynamic_size) {
+                    dynamic_size -= task->len;
+                    BytePSGlobal::pushed_so_can_pull.erase(BytePSGlobal::pushed_so_can_pull.begin());
+                    _dooropen++;
+                    BPS_LOG(INFO) << "task " << task->priority << " can be pulled, size: " << dynamic_size << ", processing: " << _dooropen;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
+                } else {
+                    if (_dooropen > 0) {
+                        BPS_LOG(INFO) << "no space, and there are something in processing, wait.";
+                    } else {
+                        if (_sizepointer == 12) {
+                            BPS_LOG(INFO) << "no things left, but we are in stage 12, so start one by one: " << task->priority;
+                            BytePSGlobal::pushed_so_can_pull.erase(BytePSGlobal::pushed_so_can_pull.begin());
+                            if (BytePSGlobal::pushed_so_can_pull.size() == 0) {
+                                _sizepointer = 1;
+                            }
+                            task->ready_event = nullptr;
+                            recorderTs(task);
+                            return task;
+                        } else {
+                        _sizepointer++;
+                        dynamic_size = _backward_exec[_sizepointer];
+                        BPS_LOG(INFO) << "no things left, next stage: " << dynamic_size;
+                        }
+                    }
                 }
+
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -369,14 +365,8 @@ namespace byteps {
                 }
             }
             if (_qt == PULL) {
-                pulled_num++;
                 if (_dooropen > 0) {
                     _dooropen--;
-                }
-                if (pull_num == pulled_num && _meetzero) {
-                    pulled_num = pull_num = 0;
-                    _meetzero = 0;
-                    _sizepointer = 1;
                 }
             }
             return;

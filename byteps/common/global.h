@@ -47,6 +47,7 @@ typedef void (*LoopFunction)();
 
 class BytePSGlobal {
  public:
+
   static void Init();
   static void Start(const std::vector<LoopFunction>& func);
   static Status CheckInit();
@@ -125,6 +126,14 @@ class BytePSGlobal {
   static void ReportThreadFinish() { joined_thread_cnt.fetch_add(1); }
   static bool IsAllThreadFinish(int total_thread_num);
   static std::atomic_int joined_thread_cnt;
+
+    struct comparator {
+        bool operator()(TensorTableEntry a, TensorTableEntry b) {
+            return (a.priority > b.priority);
+        }
+    };
+
+   static std::multiset <TensorTableEntry, comparator> pushed_so_can_pull;
 
  private:
   static std::mutex _init_mutex;
