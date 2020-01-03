@@ -256,22 +256,18 @@ namespace byteps {
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
                 task = *_ms.begin();
-                BPS_LOG(INFO) << "task:" << task->priority;
                 if (task->len < dynamic_size) {
                     dynamic_size -= task->len;
                     _ms.erase(_ms.begin());
                     _dooropen++;
-                    BPS_LOG(INFO) << "door:" << _dooropen << ".";
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
                 } else {
                     if (_dooropen) {
-                        BPS_LOG(INFO) << "no space, with door " << _dooropen << ".";
                         return nullptr;
                     } else {
                         dynamic_size = _backward_exec[++_sizepointer];
-                        BPS_LOG(INFO) << "door=0, reset size = " << dynamic_size << ".";
                         return nullptr;
                     }
                 }
@@ -354,8 +350,9 @@ namespace byteps {
                 }
             }
             if (_qt == PULL) {
-                _dooropen--;
-                BPS_LOG(INFO) << "door: " << _dooropen;
+                if (_dooropen > 0) {
+                    _dooropen--;
+                }
             }
             return;
         }
