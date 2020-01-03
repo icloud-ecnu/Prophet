@@ -100,6 +100,9 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
+                if (_qt == PULL && _tensor_part[entry->priority * -1] == 0) {
+                    pull_num += entry->total_partnum;
+                }
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
@@ -255,21 +258,37 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
-                task = *_ms.begin();
-                if (task->len < dynamic_size) {
-                    dynamic_size -= task->len;
+                if (_sizepointer == 12) {
+                    _meetzero = 1;
+                }
+                if (!_meetzero) {
+                    task = *_ms.begin();
+                    if (task->len < dynamic_size) {
+                        dynamic_size -= task->len;
+                        _ms.erase(_ms.begin());
+                        _dooropen++;
+
+                        task->ready_event = nullptr;
+                        recorderTs(task);
+                        return task;
+                    } else {
+                        if (_dooropen) {
+                            return nullptr;
+                        } else {
+                            if (_sizepointer < 12) {
+                                _sizepointer++;
+                                dynamic_size = _backward_exec[_sizepointer];
+                            }
+
+                            return nullptr;
+                        }
+                    }
+                } else {
+                    task = *_ms.begin();
                     _ms.erase(_ms.begin());
-                    _dooropen++;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
-                } else {
-                    if (_dooropen) {
-                        return nullptr;
-                    } else {
-                        dynamic_size = _backward_exec[++_sizepointer];
-                        return nullptr;
-                    }
                 }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
@@ -350,8 +369,14 @@ namespace byteps {
                 }
             }
             if (_qt == PULL) {
+                pulled_num++;
                 if (_dooropen > 0) {
                     _dooropen--;
+                }
+                if (pull_num == pulled_num && _meetzero) {
+                    pulled_num = pull_num = 0;
+                    _meetzero = 0;
+                    _sizepointer = 1;
                 }
             }
             return;

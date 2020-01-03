@@ -74,6 +74,8 @@ namespace byteps {
             int _forward_exec[13] = {0, 1350000, 1400000, 840000, 900000, 1275000, 1620000, 1335000, 1900000, 2700000,
                                      2200000, 1750000, 0};
             int _exec_stage = 0;
+            int pull_num = 0;
+            int pulled_num = 0;
             int _noleftsize = 0;
             int forward_dynamic_size;
             int _sizepointer = 0;
