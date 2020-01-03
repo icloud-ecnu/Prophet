@@ -255,8 +255,7 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && BytePSGlobal::pushed_so_can_pull.size() > 0) {
-                TensorTableEntry entry = *BytePSGlobal::pushed_so_can_pull.begin();
-                task = std::shared_ptr<TensorTableEntry> e(entry);
+                task = *BytePSGlobal::pushed_so_can_pull.begin();
                 if (task->len < dynamic_size) {
                     dynamic_size -= task->len;
                     BytePSGlobal::pushed_so_can_pull.erase(BytePSGlobal::pushed_so_can_pull.begin());
