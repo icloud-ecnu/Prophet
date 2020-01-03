@@ -212,7 +212,7 @@ namespace byteps {
                                 find_small = true;
                                 dynamic_size -= task->len;
                                 _ms.erase(msit);
-                                _mystack.erase(it);
+                                _mystack.erase(stackit);
                             } else {
                                 continue;
                             }
