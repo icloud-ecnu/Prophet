@@ -88,6 +88,8 @@ namespace byteps {
                         _rt = BytePSGlobal::GetPullTable();
                     }
                     _sizepointer = 1;
+                    dynamic_size = _backward_exec[_sizepointer];
+                    _dooropen = 0;
                     break;
                 default:
                     break;
@@ -96,7 +98,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+            if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
@@ -253,7 +255,22 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
-
+                task = *_ms.begin();
+                if (task->len < dynamic_size) {
+                    dynamic_size -= task->len;
+                    _ms.erase(_ms.begin());
+                    _dooropen++;
+                    task->ready_event = nullptr;
+                    recorderTs(task);
+                    return task;
+                } else {
+                    if (_dooropen) {
+                        return nullptr;
+                    } else {
+                        dynamic_size = _backward_exec[++_sizepointer];
+                        return nullptr;
+                    }
+                }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -331,6 +348,9 @@ namespace byteps {
                     if (_dooropen < 11)
                         _dooropen++;
                 }
+            }
+            if (_qt == PULL) {
+                _dooropen--;
             }
             return;
         }
