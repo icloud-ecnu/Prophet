@@ -259,13 +259,22 @@ namespace byteps {
                 if (_dooropen > 0) {
                     _dooropen--;
                     _ms.erase(_ms.begin());
-                    BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
+                    //BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
                 } else {
-                    BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
-                    return nullptr;
+                    if (task->priority > -10) {
+                        _dooropen--;
+                        _ms.erase(_ms.begin());
+                        //BPS_LOG(INFO) << "task " << task->priority << " force start: " << _dooropen;
+                        task->ready_event = nullptr;
+                        recorderTs(task);
+                        return task;
+                    } else {
+                        //BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
+                        return nullptr;
+                    }
                 }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
@@ -348,7 +357,7 @@ namespace byteps {
             if (_qt == PULL) {
                 if (_dooropen < 10) {
                     _dooropen++;
-                    BPS_LOG(INFO) << "door++ to " << _dooropen;
+                    //BPS_LOG(INFO) << "door++ to " << _dooropen;
                 }
             }
             return;
