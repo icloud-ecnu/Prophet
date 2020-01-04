@@ -89,7 +89,7 @@ namespace byteps {
                     }
                     _sizepointer = 1;
                     dynamic_size = _backward_exec[_sizepointer];
-                    _dooropen = 0;
+                    _dooropen = 10;
                     break;
                 default:
                     break;
@@ -98,7 +98,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+            if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
@@ -254,37 +254,19 @@ namespace byteps {
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
-            } else if (_qt == PULL && BytePSGlobal::pushed_so_can_pull.size() > 0) {
-                task = *BytePSGlobal::pushed_so_can_pull.begin();
-                if (task->len < dynamic_size) {
-                    dynamic_size -= task->len;
-                    BytePSGlobal::pushed_so_can_pull.erase(BytePSGlobal::pushed_so_can_pull.begin());
-                    _dooropen++;
-                    BPS_LOG(INFO) << "task " << task->priority << " can be pulled, size: " << dynamic_size << ", processing: " << _dooropen;
+            } else if (_qt == PULL && _ms.size() > 0) {
+                task = *_ms.begin();
+                if (_dooropen > 0) {
+                    _dooropen--;
+                    _ms.erase(_ms.begin());
+                    BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
                 } else {
-                    if (_dooropen > 0) {
-                        BPS_LOG(INFO) << "no space, and there are something in processing, wait.";
-                    } else {
-                        if (_sizepointer == 12) {
-                            BPS_LOG(INFO) << "no things left, but we are in stage 12, so start one by one: " << task->priority;
-                            BytePSGlobal::pushed_so_can_pull.erase(BytePSGlobal::pushed_so_can_pull.begin());
-                            if (BytePSGlobal::pushed_so_can_pull.size() == 0) {
-                                _sizepointer = 1;
-                            }
-                            task->ready_event = nullptr;
-                            recorderTs(task);
-                            return task;
-                        } else {
-                        _sizepointer++;
-                        dynamic_size = _backward_exec[_sizepointer];
-                        BPS_LOG(INFO) << "no things left, next stage: " << dynamic_size;
-                        }
-                    }
+                    BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
+                    return nullptr;
                 }
-
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -364,8 +346,9 @@ namespace byteps {
                 }
             }
             if (_qt == PULL) {
-                if (_dooropen > 0) {
-                    _dooropen--;
+                if (_dooropen < 10) {
+                    _dooropen++;
+                    BPS_LOG(INFO) << "door++ to " << _dooropen;
                 }
             }
             return;

@@ -127,14 +127,6 @@ class BytePSGlobal {
   static bool IsAllThreadFinish(int total_thread_num);
   static std::atomic_int joined_thread_cnt;
 
-    struct comparator {
-        bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
-            return (a->priority > b->priority);
-        }
-    };
-
-   static std::multiset <std::shared_ptr<TensorTableEntry>, comparator> pushed_so_can_pull;
-
  private:
   static std::mutex _init_mutex;
   static volatile bool _initialized;
