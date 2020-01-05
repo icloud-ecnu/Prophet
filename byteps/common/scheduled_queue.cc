@@ -75,7 +75,7 @@ namespace byteps {
                         }
                     }
                     _pointer = _init_pointer;
-                    expected_priority = _grad_checkpoint[_pointer]
+                    expected_priority = _grad_checkpoint[_pointer];
                     for (int i = 0; i < 13; i++) {
                         _backward_exec[i] *= (double)batchsize/64;
 //                    _forward_exec[i] *= batchsize/64;
