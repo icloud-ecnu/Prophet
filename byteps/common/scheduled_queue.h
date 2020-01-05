@@ -67,12 +67,12 @@ namespace byteps {
             int _meetzero = 0;
             int _dooropen = 11;
             int _pulldoor = 0;
-            int batchsize = atoi(getenv("Z_BATCH_SIZE"));
+            int batchsize = 64;
             int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
-            int B = 125000 / 2;
-            int _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90, 74, 58, 15, 0};
-            int _forward_exec[13] = {0, 1350000, 1400000, 840000, 900000, 1275000, 1620000, 1335000, 1900000, 2700000,
-                                     2200000, 1750000, 0};
+            int B = 125000 ;
+            double _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90, 74, 58, 15, 0};
+//            int _forward_exec[13] = {0, 1350000, 1400000, 840000, 900000, 1275000, 1620000, 1335000, 1900000, 2700000,
+//                                     2200000, 1750000, 0};
             int _exec_stage = 0;
             int pull_num = 0;
             int pulled_num = 0;
@@ -81,7 +81,6 @@ namespace byteps {
             int _sizepointer = 0;
             int _stagepullnum = 0;
             int _dequeue = 0;
-            int _pointer = 12;
             int _stagestart = 1;
             int dynamic_size;
             int _pushsize = 0;
@@ -89,6 +88,10 @@ namespace byteps {
             int expected_priority = _grad_checkpoint[_pointer];
             QueueType _qt;
             ReadyTable *_rt;
+            //added by qi
+            int _init_pointer = 12;
+
+
         };
     }  // namespace common
 }  // namespace byteps

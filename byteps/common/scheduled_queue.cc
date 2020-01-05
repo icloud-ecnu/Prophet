@@ -22,16 +22,29 @@ namespace byteps {
     namespace common {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-
-            if (batchsize > 32) {
-                for (int i = 0; i < 13; i++) {
-                    _backward_exec[i] *= batchsize/32;
-                    _forward_exec[i] *= batchsize/32;
+            if(getenv("Z_BATCH_SIZE"))
+                batchsize = atoi(getenv("Z_BATCH_SIZE"));
+            if(getenv("MODEL")) {
+                if (!strcmp(getenv("MODEL"), "vgg19")) {
+                    int tmp1[13] = {-1, 1, 13, 27, 37, 0, 77, 90, 103, 117, 130, 143, 156};
+                    double tmp2[13] = {285.4, 196.2, 33.2, 0, 0, 53, 44, 64, 90, 74, 58, 15, 0}; // backward execution time
+                    _init_pointer = 4;
+                    for (int i = 0; i <= _init_pointer; i++) {
+                        _grad_checkpoint[i] = tmp1[i];
+                        _backward_exec[i] = tmp2[i];
+                    }
+                    BPS_LOG(INFO) << "model vgg initilized.";
                 }
+            }
+            _pointer = _init_pointer;
+
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] *= (double)batchsize/64;
+//                    _forward_exec[i] *= batchsize/64;
             }
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= B;
-                _forward_exec[i] *= B;
+//                _forward_exec[i] *= B;
             }
 
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
@@ -84,12 +97,12 @@ namespace byteps {
                     break;
 
                 case PULL:
-                    if (BytePSGlobal::IsRootDevice()) {
-                        _rt = BytePSGlobal::GetPullTable();
-                    }
-                    _sizepointer = 1;
-                    dynamic_size = _backward_exec[_sizepointer];
-                    _dooropen = 10;
+//                    if (BytePSGlobal::IsRootDevice()) {
+//                        _rt = BytePSGlobal::GetPullTable();
+//                    }
+//                    _sizepointer = 1;
+//                    dynamic_size = _backward_exec[_sizepointer];
+//                    _dooropen = 10;
                     break;
                 default:
                     break;
@@ -160,10 +173,15 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                while (_tensor_part[expected_priority] > 0) {
-                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                        _mystack.insert(expected_priority * -1);
+                while(true){
+                    if(!_tensor_part[expected_priority]){
+                        msit = findTask(expected_priority * -1);
+                        if (msit == _ms.end())return nullptr;
+                        task = *msit;
+                        _tensor_part[expected_priority] = task->total_partnum;
                     }
+                    for (int x = 0; x < _tensor_part[expected_priority]; x++)
+                        _mystack.insert(expected_priority * -1);
                     expected_priority--;
                     if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                         _dequeue = 1;
@@ -171,21 +189,32 @@ namespace byteps {
                         return nullptr;
                     }
                 }
-                msit = findTask(expected_priority * -1);
-                if (msit == _ms.end()) {
-                    return nullptr;
-                }
-                task = *msit;
-
-                _tensor_part[expected_priority] = task->total_partnum;
-                for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                    _mystack.insert(expected_priority * -1);
-                }
-                expected_priority--;
-                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-                    _dequeue = 1;
-                    dynamic_size = _backward_exec[_sizepointer++];
-                }
+//                while (_tensor_part[expected_priority] > 0) {
+//                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+//                        _mystack.insert(expected_priority * -1);
+//                    }
+//                    expected_priority--;
+//                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+//                        _dequeue = 1;
+//                        dynamic_size = (int)_backward_exec[_sizepointer++];
+//                        return nullptr;
+//                    }
+//                }
+//                msit = findTask(expected_priority * -1);
+//                if (msit == _ms.end()) {
+//                    return nullptr;
+//                }
+//                task = *msit;
+//
+//                _tensor_part[expected_priority] = task->total_partnum;
+//                for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+//                    _mystack.insert(expected_priority * -1);
+//                }
+//                expected_priority--;
+//                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+//                    _dequeue = 1;
+//                    dynamic_size = _backward_exec[_sizepointer++];
+//                }
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
@@ -244,7 +273,7 @@ namespace byteps {
                 }
                 if (_mystack.size() == 0 && _meetzero) {
                     _dequeue = 0;
-                    _pointer = 12;
+                    _pointer = _init_pointer;
                     expected_priority = _grad_checkpoint[_pointer];
                     _stagestart = 1;
                     _meetzero = 0;
@@ -255,27 +284,27 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else if (_qt == PULL && _ms.size() > 0) {
-                task = *_ms.begin();
-                if (_dooropen > 0) {
-                    _dooropen--;
-                    _ms.erase(_ms.begin());
-                    //BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
-                    task->ready_event = nullptr;
-                    recorderTs(task);
-                    return task;
-                } else {
-                    if (task->priority > -10) {
-                        _dooropen--;
-                        _ms.erase(_ms.begin());
-                        //BPS_LOG(INFO) << "task " << task->priority << " force start: " << _dooropen;
-                        task->ready_event = nullptr;
-                        recorderTs(task);
-                        return task;
-                    } else {
-                        //BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
-                        return nullptr;
-                    }
-                }
+//                task = *_ms.begin();
+//                if (_dooropen > 0) {
+//                    _dooropen--;
+//                    _ms.erase(_ms.begin());
+//                    //BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
+//                    task->ready_event = nullptr;
+//                    recorderTs(task);
+//                    return task;
+//                } else {
+//                    if (task->priority > -10) {
+//                        _dooropen--;
+//                        _ms.erase(_ms.begin());
+//                        //BPS_LOG(INFO) << "task " << task->priority << " force start: " << _dooropen;
+//                        task->ready_event = nullptr;
+//                        recorderTs(task);
+//                        return task;
+//                    } else {
+//                        //BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
+//                        return nullptr;
+//                    }
+//                }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -343,10 +372,10 @@ namespace byteps {
             return _sq.size();
         }
 
-        void BytePSScheduledQueue::reportFinish(int size) {
+        void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_is_scheduled) {
-                _credits += size;
+                _credits += task -> len;
             }
             if (_qt == PUSH) {
                 if (_meetzero) {
@@ -354,12 +383,12 @@ namespace byteps {
                         _dooropen++;
                 }
             }
-            if (_qt == PULL) {
-                if (_dooropen < 10) {
-                    _dooropen++;
-                    //BPS_LOG(INFO) << "door++ to " << _dooropen;
-                }
-            }
+//            if (_qt == PULL) {
+//                if (_dooropen < 10) {
+//                    _dooropen++;
+//                    //BPS_LOG(INFO) << "door++ to " << _dooropen;
+//                }
+//            }
             return;
         }
 
