@@ -22,30 +22,6 @@ namespace byteps {
     namespace common {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-            if(getenv("Z_BATCH_SIZE"))
-                batchsize = atoi(getenv("Z_BATCH_SIZE"));
-            if(getenv("MODEL")) {
-                if (!strcmp(getenv("MODEL"), "vgg19")) {
-                    int tmp1[13] = {-1, 1, 13, 27, 37, 0, 77, 90, 103, 117, 130, 143, 156};
-                    double tmp2[13] = {285.4, 196.2, 33.2, 0, 0, 53, 44, 64, 90, 74, 58, 15, 0}; // backward execution time
-                    _init_pointer = 4;
-                    for (int i = 0; i <= _init_pointer; i++) {
-                        _grad_checkpoint[i] = tmp1[i];
-                        _backward_exec[i] = tmp2[i];
-                    }
-                    BPS_LOG(INFO) << "model vgg initilized.";
-                }
-            }
-            _pointer = _init_pointer;
-
-            for (int i = 0; i < 13; i++) {
-                _backward_exec[i] *= (double)batchsize/64;
-//                    _forward_exec[i] *= batchsize/64;
-            }
-            for (int i = 0; i < 13; i++) {
-                _backward_exec[i] *= B;
-//                _forward_exec[i] *= B;
-            }
 
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
@@ -83,6 +59,30 @@ namespace byteps {
                 case PUSH:
                     if (BytePSGlobal::IsRootDevice()) {
                         _rt = BytePSGlobal::GetPushTable();
+                    }
+                    if(getenv("Z_BATCH_SIZE"))
+                        batchsize = atoi(getenv("Z_BATCH_SIZE"));
+                    if(getenv("MODEL")) {
+                        if (!strcmp(getenv("MODEL"), "vgg19")) {
+                            int tmp1[13] = {-1, 1, 13, 27, 37, 0, 77, 90, 103, 117, 130, 143, 156};
+                            double tmp2[13] = {285.4, 196.2, 33.2, 0, 0, 53, 44, 64, 90, 74, 58, 15, 0}; // backward execution time
+                            _init_pointer = 4;
+                            for (int i = 0; i <= _init_pointer; i++) {
+                                _grad_checkpoint[i] = tmp1[i];
+                                _backward_exec[i] = tmp2[i];
+                            }
+                            BPS_LOG(INFO) << "model vgg initilized.";
+                        }
+                    }
+                    _pointer = _init_pointer;
+                    expected_priority = _grad_checkpoint[_pointer]
+                    for (int i = 0; i < 13; i++) {
+                        _backward_exec[i] *= (double)batchsize/64;
+//                    _forward_exec[i] *= batchsize/64;
+                    }
+                    for (int i = 0; i < 13; i++) {
+                        _backward_exec[i] *= B;
+//                _forward_exec[i] *= B;
                     }
                     break;
                 case COPYH2D:
@@ -215,7 +215,7 @@ namespace byteps {
 //                    _dequeue = 1;
 //                    dynamic_size = _backward_exec[_sizepointer++];
 //                }
-                return nullptr;
+                //return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
                 msit = findTask(*(_mystack.begin()));
@@ -372,7 +372,7 @@ namespace byteps {
             return _sq.size();
         }
 
-        void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {
+        void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {//
             std::lock_guard <std::mutex> lock(_mutex);
             if (_is_scheduled) {
                 _credits += task -> len;

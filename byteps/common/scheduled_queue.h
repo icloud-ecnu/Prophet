@@ -85,11 +85,12 @@ namespace byteps {
             int dynamic_size;
             int _pushsize = 0;
             int _pullsize = 0;
-            int expected_priority = _grad_checkpoint[_pointer];
+            int expected_priority;
             QueueType _qt;
             ReadyTable *_rt;
             //added by qi
             int _init_pointer = 12;
+            int _pointer;
 
 
         };
