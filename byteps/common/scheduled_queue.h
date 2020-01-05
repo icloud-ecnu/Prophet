@@ -47,7 +47,7 @@ namespace byteps {
 
             uint32_t pendingSize();
 
-            void reportFinish(int size);
+            void reportFinish(std::shared_ptr <TensorTableEntry> task);
 
         private:
             struct comparator {
