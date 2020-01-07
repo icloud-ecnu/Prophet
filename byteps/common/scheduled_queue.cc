@@ -106,7 +106,7 @@ namespace byteps {
             if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
-                if (strcmp(begin_name, entry->tensor_name) == 0) {
+                if (begin_name == entry->tensor_name) {
                     timer = getSystemTime();
                     next_timer = timer + duration;
                 }
@@ -173,7 +173,7 @@ namespace byteps {
                 BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
                 if (now <= next_timer) {
                     msit = _ms.begin();
-                    if (msit != ms.end()) {
+                    if (msit != _ms.end()) {
                         task = *msit;
                         BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                         if (task -> len < dynamic_size) {
