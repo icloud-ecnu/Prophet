@@ -106,6 +106,7 @@ namespace byteps {
             if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
+                BPS_LOG(INFO) << begin_name << "==" << entry->tensor_name << ":" << (begin_name == entry->tensor_name);
                 if (begin_name == entry->tensor_name) {
                     timer = getSystemTime();
                     next_timer = timer + duration;
