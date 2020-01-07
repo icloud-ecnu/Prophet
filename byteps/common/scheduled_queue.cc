@@ -72,8 +72,8 @@ namespace byteps {
                                 _backward_exec[i] = tmp2[i];
                             }
                             begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_resnet50_fc1000_BiasAdd_grad_tuple_control_dependency_1_0";
-                            duration_ptr = 1;
-                            duration = durations[duration_ptr];
+//                            duration_ptr = 1;
+//                            duration = durations[duration_ptr];
                         }
                     }
                     _pointer = _init_pointer;
