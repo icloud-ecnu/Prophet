@@ -109,7 +109,8 @@ namespace byteps {
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
                     timer = getSystemTime();
-                    next_timer = timer + duration;
+                    duration_ptr = 0;
+                    next_timer = timer + durations[duration_ptr];
                 }
             } else {
                 _sq.push_back(entry);
@@ -194,7 +195,7 @@ namespace byteps {
                     dynamic_size = max_dynamic_size;
                     duration_ptr++;
                     if (duration_ptr < duration_ptr_len)
-                        next_timer += durations[duration_ptr % duration_ptr_len];
+                        next_timer += durations[duration_ptr];
 //                    BPS_LOG(INFO) << "reset:" << next_timer;
                     return nullptr;
                 }
