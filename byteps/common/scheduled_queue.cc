@@ -172,12 +172,12 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && _ms.size() > 0) {
                 long long now = getSystemTime();
-//                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
+                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
                 if (now <= next_timer || duration_ptr == duration_ptr_len) {
                     msit = _ms.begin();
                     if (msit != _ms.end()) {
                         task = *msit;
-//                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
+                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                         if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
                             dynamic_size -= task -> len;
 //                            BPS_LOG(INFO) << "start";
@@ -185,18 +185,20 @@ namespace byteps {
                             recorderTs(task);
                             return task;
                         } else {
-//                            BPS_LOG(INFO) << "no space left";
+                            BPS_LOG(INFO) << "no space left";
                             return nullptr;
                         }
                     } else {
                         return nullptr;
                     }
                 } else {
-                    dynamic_size = max_dynamic_size;
-                    duration_ptr++;
+//                    max_dynamic_size =
+                    dynamic_size =  durations[duration_ptr++] * B;
+//                    duration_ptr++;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
-//                    BPS_LOG(INFO) << "reset:" << next_timer;
+                    BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size;
+
                     return nullptr;
                 }
             } else {
