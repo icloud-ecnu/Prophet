@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "ready_table.h"
-#include <sys\timeb.h>
+#include <sys/timeb.h>
 
 namespace byteps {
     namespace common {
