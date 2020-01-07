@@ -110,7 +110,7 @@ namespace byteps {
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
                     timer = getSystemTime();
                     duration_ptr = 0;
-                    next_timer = timer + durations[duration_ptr];
+                    next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                 }
             } else {
                 _sq.push_back(entry);
