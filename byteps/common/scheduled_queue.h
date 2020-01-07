@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "ready_table.h"
+#include <sys\timeb.h>
 
 namespace byteps {
     namespace common {
@@ -82,7 +83,7 @@ namespace byteps {
             int _stagepullnum = 0;
             int _dequeue = 0;
             int _stagestart = 1;
-            int dynamic_size;
+            int dynamic_size = 0;
             int _pushsize = 0;
             int _pullsize = 0;
             int expected_priority;
@@ -91,6 +92,17 @@ namespace byteps {
             //added by qi
             int _init_pointer = 12;
             int _pointer;
+            std::string begin_name = "Comm.byteps.gradient_144";
+            long long timer = 0;
+            int duration = 0;
+            long long next_timer = 0;
+            long long getSystemTime(){
+                timeb t;
+                ftime(&t);
+                return t.time * 1000 + t.millitm;
+            }
+            int max_dynamic_size = 1000000;
+
 
 
         };

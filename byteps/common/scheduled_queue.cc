@@ -71,18 +71,17 @@ namespace byteps {
                                 _grad_checkpoint[i] = tmp1[i];
                                 _backward_exec[i] = tmp2[i];
                             }
-                            BPS_LOG(INFO) << "model vgg initilized.";
+                            begin_name = ""; // TODO
+                            duration = 0; // TODO
                         }
                     }
                     _pointer = _init_pointer;
                     expected_priority = _grad_checkpoint[_pointer];
                     for (int i = 0; i < 13; i++) {
                         _backward_exec[i] *= (double)batchsize/64;
-//                    _forward_exec[i] *= batchsize/64;
                     }
                     for (int i = 0; i < 13; i++) {
                         _backward_exec[i] *= B;
-//                _forward_exec[i] *= B;
                     }
                     break;
                 case COPYH2D:
@@ -95,14 +94,7 @@ namespace byteps {
                         _rt = BytePSGlobal::GetBroadcastTable();
                     }
                     break;
-
                 case PULL:
-//                    if (BytePSGlobal::IsRootDevice()) {
-//                        _rt = BytePSGlobal::GetPullTable();
-//                    }
-//                    _sizepointer = 1;
-//                    dynamic_size = _backward_exec[_sizepointer];
-//                    _dooropen = 10;
                     break;
                 default:
                     break;
@@ -114,6 +106,10 @@ namespace byteps {
             if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
+                if (strcmp(begin_name, entry->tensor_name) == 0) {
+                    timer = getSystemTime();
+                    next_timer = timer + duration;
+                }
             } else {
                 _sq.push_back(entry);
             }
@@ -172,139 +168,33 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                while(true){
-                    if(!_tensor_part[expected_priority]){
-                        msit = findTask(expected_priority * -1);
-                        if (msit == _ms.end())return nullptr;
-                        task = *msit;
-                        _tensor_part[expected_priority] = task->total_partnum;
-                    }
-                    for (int x = 0; x < _tensor_part[expected_priority]; x++)
-                        _mystack.insert(expected_priority * -1);
-                    expected_priority--;
-                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-                        _dequeue = 1;
-                        dynamic_size = _backward_exec[_sizepointer++];
-                        return nullptr;
-                    }
-                }
-//                while (_tensor_part[expected_priority] > 0) {
-//                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-//                        _mystack.insert(expected_priority * -1);
-//                    }
-//                    expected_priority--;
-//                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-//                        _dequeue = 1;
-//                        dynamic_size = (int)_backward_exec[_sizepointer++];
-//                        return nullptr;
-//                    }
-//                }
-//                msit = findTask(expected_priority * -1);
-//                if (msit == _ms.end()) {
-//                    return nullptr;
-//                }
-//                task = *msit;
-//
-//                _tensor_part[expected_priority] = task->total_partnum;
-//                for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-//                    _mystack.insert(expected_priority * -1);
-//                }
-//                expected_priority--;
-//                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-//                    _dequeue = 1;
-//                    dynamic_size = _backward_exec[_sizepointer++];
-//                }
-                //return nullptr;
-            }
             if (_qt == PUSH && _ms.size() > 0) {
-                msit = findTask(*(_mystack.begin()));
-                if (msit == _ms.end()) {
-                    return nullptr;
-                }
-                task = *msit;
-                if (_sizepointer == _init_pointer + 1) { ////?????????????????????????????????????????????????????????
-                    _meetzero = 1;
-                }
-                if (!_meetzero) {
-                    if (dynamic_size > task->len) {
-                        dynamic_size -= task->len;
-                        _ms.erase(msit);
-                        _mystack.erase(_mystack.begin());
-                    } else {
-                        bool find_small = false;
-                        for (auto stackit = _mystack.begin(); stackit != _mystack.end(); stackit++) {
-                            msit = findTask(*stackit);
-                            if (msit == _ms.end()) {
-                                break;
-                            }
-                            task = *msit;
-                            if (dynamic_size > task->len) {
-                                find_small = true;
-                                dynamic_size -= task->len;
-                                _ms.erase(msit);
-                                _mystack.erase(stackit);
-                                break;
-                            } else {
-                                continue;
-                            }
-                        }
-                        if (find_small) {
-
+                long long now = getSystemTime();
+                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
+                if (now <= next_timer) {
+                    msit = _ms.begin();
+                    if (msit != ms.end()) {
+                        task = *msit;
+                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
+                        if (task -> len < dynamic_size) {
+                            dynamic_size -= task -> len;
+                            BPS_LOG(INFO) << "start";
+                            task->ready_event = nullptr;
+                            recorderTs(task);
+                            return task;
                         } else {
-                            _dequeue = 0;
-                            _pointer--;
-                            _stagestart = 1;
-                            BytePSGlobal::pushsize[_sizepointer] = *(_mystack.begin()) + 1;
+                            BPS_LOG(INFO) << "no space left";
                             return nullptr;
                         }
-                    }
-                } else if (!_dooropen) {
-                    return nullptr;
-                } else {
-                    msit = findTask(*(_mystack.begin()));
-                    if (msit == _ms.end()) {
+                    } else {
                         return nullptr;
                     }
-                    task = *msit;
-                    _dooropen--;
-                    _ms.erase(msit);
-                    _mystack.erase(_mystack.begin());
+                } else {
+                    dynamic_size = max_dynamic_size;
+                    next_timer += duration;
+                    BPS_LOG(INFO) << "reset:" << next_timer;
+                    return nullptr;
                 }
-                if (_mystack.size() == 0 && _meetzero) {
-                    _dequeue = 0;
-                    _pointer = _init_pointer;
-                    expected_priority = _grad_checkpoint[_pointer];
-                    _stagestart = 1;
-                    _meetzero = 0;
-                    _sizepointer = 0;
-                    _dooropen = 11;
-                }
-                task->ready_event = nullptr;
-                recorderTs(task);
-                return task;
-            } else if (_qt == PULL && _ms.size() > 0) {
-//                task = *_ms.begin();
-//                if (_dooropen > 0) {
-//                    _dooropen--;
-//                    _ms.erase(_ms.begin());
-//                    //BPS_LOG(INFO) << "task " << task->priority << " begins, and door remains: " << _dooropen;
-//                    task->ready_event = nullptr;
-//                    recorderTs(task);
-//                    return task;
-//                } else {
-//                    if (task->priority > -10) {
-//                        _dooropen--;
-//                        _ms.erase(_ms.begin());
-//                        //BPS_LOG(INFO) << "task " << task->priority << " force start: " << _dooropen;
-//                        task->ready_event = nullptr;
-//                        recorderTs(task);
-//                        return task;
-//                    } else {
-//                        //BPS_LOG(INFO) << "task " << task->priority << " wait doors.";
-//                        return nullptr;
-//                    }
-//                }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -383,12 +273,6 @@ namespace byteps {
                         _dooropen++;
                 }
             }
-//            if (_qt == PULL) {
-//                if (_dooropen < 10) {
-//                    _dooropen++;
-//                    //BPS_LOG(INFO) << "door++ to " << _dooropen;
-//                }
-//            }
             return;
         }
 
