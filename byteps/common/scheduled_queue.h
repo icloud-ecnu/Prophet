@@ -94,8 +94,8 @@ namespace byteps {
             int _pointer;
             std::string begin_name = "byteps.gradient_144";
             long long timer = 0;
-            int duration = 50;
-            int durations = {5, 16.5, 17.5, 53, 9};
+//            int duration = 50;
+            int durations[5] = {5, 16.5, 17.5, 53, 9};
             int duration_ptr = 0;
             int duration_ptr_len = 5;
             long long next_timer = 0;
