@@ -71,8 +71,9 @@ namespace byteps {
                                 _grad_checkpoint[i] = tmp1[i];
                                 _backward_exec[i] = tmp2[i];
                             }
-                            begin_name = ""; // TODO
-                            duration = 0; // TODO
+                            begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_resnet50_fc1000_BiasAdd_grad_tuple_control_dependency_1_0";
+                            duration_ptr = 1;
+                            duration = durations[duration_ptr];
                         }
                     }
                     _pointer = _init_pointer;
@@ -170,20 +171,20 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && _ms.size() > 0) {
                 long long now = getSystemTime();
-                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
-                if (now <= next_timer) {
+//                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
+                if (now <= next_timer || duration_ptr == duration_ptr_len) {
                     msit = _ms.begin();
                     if (msit != _ms.end()) {
                         task = *msit;
-                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
-                        if (task -> len < dynamic_size) {
+//                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
+                        if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
                             dynamic_size -= task -> len;
-                            BPS_LOG(INFO) << "start";
+//                            BPS_LOG(INFO) << "start";
                             task->ready_event = nullptr;
                             recorderTs(task);
                             return task;
                         } else {
-                            BPS_LOG(INFO) << "no space left";
+//                            BPS_LOG(INFO) << "no space left";
                             return nullptr;
                         }
                     } else {
@@ -191,8 +192,10 @@ namespace byteps {
                     }
                 } else {
                     dynamic_size = max_dynamic_size;
-                    next_timer += duration;
-                    BPS_LOG(INFO) << "reset:" << next_timer;
+                    duration_ptr++;
+                    if (duration_ptr < duration_ptr_len)
+                        next_timer += durations[duration_ptr % duration_ptr_len];
+//                    BPS_LOG(INFO) << "reset:" << next_timer;
                     return nullptr;
                 }
             } else {
