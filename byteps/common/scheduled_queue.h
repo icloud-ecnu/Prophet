@@ -92,7 +92,7 @@ namespace byteps {
             //added by qi
             int _init_pointer = 12;
             int _pointer;
-            std::string begin_name = "Comm.byteps.gradient_144";
+            std::string begin_name = "byteps.gradient_144";
             long long timer = 0;
             int duration = 0;
             long long next_timer = 0;
