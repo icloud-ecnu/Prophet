@@ -102,7 +102,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if ((_qt == PUSH || _qt == PULL) && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
@@ -110,6 +110,7 @@ namespace byteps {
                     duration_ptr = 0;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                     dynamic_size =  durations[duration_ptr] * B;
+                    BPS_LOG(INFO) << "start!!";
                 }
             } else {
                 _sq.push_back(entry);
@@ -179,7 +180,6 @@ namespace byteps {
                         BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                         if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
                             dynamic_size -= task -> len;
-//                            BPS_LOG(INFO) << "start";
                             task->ready_event = nullptr;
                             recorderTs(task);
                             return task;
@@ -191,9 +191,7 @@ namespace byteps {
                         return nullptr;
                     }
                 } else {
-//                    max_dynamic_size =
                     dynamic_size =  durations[++duration_ptr] * B;
-//                    duration_ptr++;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
                     BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size;
