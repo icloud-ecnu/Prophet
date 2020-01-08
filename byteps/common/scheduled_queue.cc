@@ -105,6 +105,9 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
+                long long now = getSystemTime();
+//                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
+                BPS_LOG(INFO) << "PUSH gradient operation is ready: " << entry -> priority << " now:" << now << "  next_timer" << next_timer;
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
                     timer = getSystemTime();
@@ -183,7 +186,7 @@ namespace byteps {
                     if(task -> len < dynamic_size)dynamic_size -= task -> len;
                     if(duration_ptr == duration_ptr_len)_dooropen--;
                     _ms.erase(_ms.begin());
-                    //BPS_LOG(INFO)  << " ,size" << task->len << "   ,dynamic:" << dynamic_size  <<"   door open value:" << _dooropen << " now pop task:" << task -> priority ;
+                    BPS_LOG(INFO)  << " ,size" << task->len << "   ,dynamic:" << dynamic_size  <<"   door open value:" << _dooropen << " now pop task:" << task -> priority ;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
@@ -195,7 +198,7 @@ namespace byteps {
                     dynamic_size =  durations[++duration_ptr] * B;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
-                   // BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size << "...............................................";
+                    BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size << "...............................................";
 
                     return nullptr;
                 }
