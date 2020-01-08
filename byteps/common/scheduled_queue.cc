@@ -173,12 +173,12 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && _ms.size() > 0) {
                 long long now = getSystemTime();
-                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
+//                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
                 if (now <= next_timer || duration_ptr == duration_ptr_len) {
                     msit = _ms.begin();
                     if (msit != _ms.end()) {
                         task = *msit;
-                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
+//                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                         if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
                             dynamic_size -= task -> len;
                             _ms.erase(_ms.begin());
@@ -186,7 +186,7 @@ namespace byteps {
                             recorderTs(task);
                             return task;
                         } else {
-                            BPS_LOG(INFO) << "no space left";
+//                            BPS_LOG(INFO) << "no space left";
                             return nullptr;
                         }
                     } else {
