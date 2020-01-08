@@ -71,9 +71,7 @@ namespace byteps {
                                 _grad_checkpoint[i] = tmp1[i];
                                 _backward_exec[i] = tmp2[i];
                             }
-                            begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_resnet50_fc1000_BiasAdd_grad_tuple_control_dependency_1_0";
-//                            duration_ptr = 1;
-//                            duration = durations[duration_ptr];
+                            begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_vgg16_predictions_BiasAdd_grad_tuple_control_dependency_1_0";
                         }
                     }
                     _pointer = _init_pointer;
@@ -111,6 +109,7 @@ namespace byteps {
                     timer = getSystemTime();
                     duration_ptr = 0;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
+                    dynamic_size =  durations[duration_ptr] * B;
                 }
             } else {
                 _sq.push_back(entry);
@@ -193,7 +192,7 @@ namespace byteps {
                     }
                 } else {
 //                    max_dynamic_size =
-                    dynamic_size =  durations[duration_ptr++] * B;
+                    dynamic_size =  durations[++duration_ptr] * B;
 //                    duration_ptr++;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
