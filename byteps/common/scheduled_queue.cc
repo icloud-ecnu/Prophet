@@ -71,6 +71,7 @@ namespace byteps {
                                 _grad_checkpoint[i] = tmp1[i];
                                 _backward_exec[i] = tmp2[i];
                             }
+                            B *= 4;
                             begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_vgg16_predictions_BiasAdd_grad_tuple_control_dependency_1_0";
                         }
                     }
@@ -180,6 +181,7 @@ namespace byteps {
                         BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                         if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
                             dynamic_size -= task -> len;
+                            _ms.erase(_ms.begin());
                             task->ready_event = nullptr;
                             recorderTs(task);
                             return task;
