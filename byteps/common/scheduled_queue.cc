@@ -109,6 +109,7 @@ namespace byteps {
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
                     timer = getSystemTime();
                     duration_ptr = 0;
+                    _dooropen = 11;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                     dynamic_size =  durations[duration_ptr] * B;
                     BPS_LOG(INFO) << "start!!";
@@ -176,27 +177,23 @@ namespace byteps {
 //                BPS_LOG(INFO) << "now:" << now << " ,next_timer" << next_timer;
                 if (now <= next_timer || duration_ptr == duration_ptr_len) {
                     msit = _ms.begin();
-                    if (msit != _ms.end()) {
-                        task = *msit;
+                task = *msit;
 //                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
-                        if (task -> len < dynamic_size || duration_ptr == duration_ptr_len) {
-                            dynamic_size -= task -> len;
-                            _ms.erase(_ms.begin());
-                            task->ready_event = nullptr;
-                            recorderTs(task);
-                            return task;
-                        } else {
+                if (task -> len < dynamic_size || (duration_ptr == duration_ptr_len && _dooropen)) {
+                    dynamic_size -= task -> len;
+                    _ms.erase(_ms.begin());
+                    task->ready_event = nullptr;
+                    recorderTs(task);
+                    return task;
+                } else {
 //                            BPS_LOG(INFO) << "no space left";
-                            return nullptr;
-                        }
-                    } else {
-                        return nullptr;
-                    }
+                    return nullptr;
+                }
                 } else {
                     dynamic_size =  durations[++duration_ptr] * B;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
-                    BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size;
+                    //BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size;
 
                     return nullptr;
                 }
@@ -273,10 +270,9 @@ namespace byteps {
                 _credits += task -> len;
             }
             if (_qt == PUSH) {
-                if (_meetzero) {
-                    if (_dooropen < 11)
+                if  (duration_ptr == duration_ptr_len && _dooropen < 11)
                         _dooropen++;
-                }
+
             }
             return;
         }
