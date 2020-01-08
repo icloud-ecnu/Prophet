@@ -180,9 +180,10 @@ namespace byteps {
                 task = *msit;
 //                        BPS_LOG(INFO) << "task:" << task->tensor_name << " ,size" << task->len << " ,dynamic:" << dynamic_size;
                 if (task -> len < dynamic_size || (duration_ptr == duration_ptr_len && _dooropen)) {
-                    dynamic_size -= task -> len;
+                    if(task -> len < dynamic_size)dynamic_size -= task -> len;
+                    if(duration_ptr == duration_ptr_len)_dooropen--;
                     _ms.erase(_ms.begin());
-                    BPS_LOG(INFO)  << " ,size" << task->len << "   ,dynamic:" << dynamic_size  <<"   door open value:" << _dooropen << " now pop task:" << task -> priority ;
+                    //BPS_LOG(INFO)  << " ,size" << task->len << "   ,dynamic:" << dynamic_size  <<"   door open value:" << _dooropen << " now pop task:" << task -> priority ;
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
@@ -194,7 +195,7 @@ namespace byteps {
                     dynamic_size =  durations[++duration_ptr] * B;
                     if (duration_ptr < duration_ptr_len)
                         next_timer += durations[duration_ptr];
-                    BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size << "...............................................";
+                   // BPS_LOG(INFO) << "reset:" << next_timer << " dynamic size is: " << dynamic_size << "...............................................";
 
                     return nullptr;
                 }
