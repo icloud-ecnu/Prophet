@@ -29,7 +29,7 @@ void FinishOrProceed(std::shared_ptr<TensorTableEntry> task) {
   BPS_CHECK_GE(queue_list.size(), 1);
   auto this_op = queue_list[0];
   auto q = BytePSGlobal::GetScheduledQueue(this_op);
-  q->reportFinish(task->len);
+  q->reportFinish(task);
   if (BytePSGlobal::IsTensorSampled(task->key)) {
     // We only support sampling
     BPS_CHECK(task->tensor->dtype() == common::BYTEPS_FLOAT32);
