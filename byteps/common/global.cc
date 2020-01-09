@@ -115,11 +115,7 @@ void BytePSGlobal::Init() {
   _basic_comm->init(&_rank, &_size, &_local_rank, &_local_size, &_worker_id,
                     &_my_role);
 
-    if (_my_role == LOCAL_ROOT) {
-        _is_root_device = true;
-    } else {
-        _is_root_device = false;
-    }
+  _is_root_device = (_my_role == LOCAL_ROOT) ? true : false;
   if (getenv("BYTEPS_PARTITION_BYTES")) {
     _partition_bytes = atoi(getenv("BYTEPS_PARTITION_BYTES"));
   }
