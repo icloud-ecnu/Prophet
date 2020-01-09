@@ -24,6 +24,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+#include <unistd.h>
 #include "common.h"
 #include "communicator.h"
 #include "cpu_reducer.h"
@@ -47,7 +48,6 @@ typedef void (*LoopFunction)();
 
 class BytePSGlobal {
  public:
-
   static void Init();
   static void Start(const std::vector<LoopFunction>& func);
   static Status CheckInit();
@@ -100,7 +100,6 @@ class BytePSGlobal {
   static ReadyTable* GetPcieReduceTable() { return _pcie_reduce_table; }
   static ReadyTable* GetBroadcastTable() { return _broadcast_table; }
   static ReadyTable* GetPushTable() { return _push_table; }
-  static ReadyTable* GetPullTable() { return _pull_table; }
 
   // reduce strategies
   static bool IsUsingReduce() { return _is_using_reduce; }
@@ -110,8 +109,7 @@ class BytePSGlobal {
 
   // for non-root
   static ReadyTable* GetCopyTable() { return _copy_table; }
-  
-  static int pushsize[20] ; 
+
   static std::shared_ptr<NcclManager> GetNccl() { return _nccl_manager; }
   static std::shared_ptr<CpuReducer> GetCpuReducer() { return _cpu_reducer; }
 
@@ -162,8 +160,6 @@ class BytePSGlobal {
   static int _end_step;
   static std::string _trace_dir;
 
-
-
   static cudaStream_t* _copy_device2host_stream;
   static cudaStream_t* _copy_host2device_stream;
 
@@ -174,7 +170,6 @@ class BytePSGlobal {
   static ReadyTable* _pcie_reduce_table;
   static ReadyTable* _broadcast_table;
   static ReadyTable* _push_table;
-  static ReadyTable* _pull_table;
 
   // (key, ready_signal_count) pair, only valid for non-root device
   static ReadyTable* _copy_table;
@@ -189,10 +184,12 @@ class BytePSGlobal {
   // for debug sampling
   static uint64_t _sample_key;
 
-  static int AlignTo(int input, int alignment) {
-    return input / alignment * alignment;
-  }
+  static int AlignTo(int input, int alignment) { return input / alignment * alignment; }
   
+  static int _pagesize;
+  static int DivUp(int x, int y) { return (x + y - 1) / y; }
+  static int RoundUp(int x, int y) { return DivUp(x, y) * y; }
+
   // hash functions
   static std::string _hash_knob;
   static std::hash<std::string> _built_in_hash_fn;
@@ -201,6 +198,7 @@ class BytePSGlobal {
   static uint64_t Hash_BuiltIn(uint64_t key);
   static uint64_t Hash_DJB2(uint64_t key);
   static uint64_t Hash_SDBM(uint64_t key);
+
 };
 
 }  // namespace common

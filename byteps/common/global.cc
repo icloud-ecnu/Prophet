@@ -16,7 +16,6 @@
 #include "global.h"
 #include <malloc.h>
 #include <numa.h>
-#include <unistd.h>
 #include <sstream>
 
 namespace byteps {
@@ -39,15 +38,14 @@ bool BytePSGlobal::_is_distributed_job;
 bool BytePSGlobal::_is_cross_pcie_switch;
 uint32_t BytePSGlobal::_partition_bytes = 4096000;
 
-//added by chris
-int BytePSGlobal::pushsize[20] = {0};
-
 int BytePSGlobal::_is_trace = 0;
 int BytePSGlobal::_start_step = 10;
 int BytePSGlobal::_end_step = 20;
 std::string BytePSGlobal::_trace_dir;
 std::unordered_map<std::string, int> BytePSGlobal::_name2end;
 int BytePSGlobal::_output_counter = 0;
+
+int BytePSGlobal::_pagesize = 0;
 
 std::shared_ptr<BytePSComm> BytePSGlobal::_basic_comm;
 std::shared_ptr<BytePSSharedMemory> BytePSGlobal::_shm_obj;
@@ -66,7 +64,6 @@ ReadyTable* BytePSGlobal::_reduce_table;
 ReadyTable* BytePSGlobal::_pcie_reduce_table;
 ReadyTable* BytePSGlobal::_broadcast_table;
 ReadyTable* BytePSGlobal::_push_table;
-ReadyTable* BytePSGlobal::_pull_table;
 ReadyTable* BytePSGlobal::_copy_table;
 bool BytePSGlobal::_is_using_reduce = false;
 std::vector<int> BytePSGlobal::_reduce_roots;
@@ -116,17 +113,17 @@ void BytePSGlobal::Init() {
                     &_my_role);
 
   _is_root_device = (_my_role == LOCAL_ROOT) ? true : false;
+  
+  // should round up partition bytes in order to be page aligned
   if (getenv("BYTEPS_PARTITION_BYTES")) {
     _partition_bytes = atoi(getenv("BYTEPS_PARTITION_BYTES"));
   }
-  BPS_LOG(DEBUG) << "Partition bound set to " << _partition_bytes << " bytes"
-                 << ", aligned to "
-                 << AlignTo(_partition_bytes, (8 * _local_size)) << " bytes";
-  // alignment for Reduce-Scatter/All-Gather
-  _partition_bytes = AlignTo(_partition_bytes, (8 * _local_size));
+  _pagesize = sysconf(_SC_PAGESIZE);
+  BPS_CHECK_GT(_pagesize, 0);
+  _partition_bytes = RoundUp(_partition_bytes, _local_size * _pagesize);
+  BPS_LOG(DEBUG) << "Partition size round up to " << _partition_bytes << " (bytes)";
 
   BPS_CHECK(getenv("DMLC_NUM_WORKER")) << "error: env DMLC_NUM_WORKER not set";
-
   _num_worker = atoi(getenv("DMLC_NUM_WORKER"));
 
   if (getenv("BYTEPS_FORCE_DISTRIBUTED")) {
@@ -179,7 +176,6 @@ void BytePSGlobal::Init() {
   // ReadyTable for Push & Pull
   if (_is_root_device) {
     _push_table = new ReadyTable(_local_size - 1, "PUSH");
-    _pull_table = new ReadyTable(_local_size - 1, "PUSH");
   } else {
     _copy_table = new ReadyTable(1, "COPY");
   }
@@ -297,7 +293,7 @@ void BytePSGlobal::Shutdown() {
 
   while (!IsAllThreadFinish(total_thread_num)) {
     // wait until all threads joined
-    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+    std::this_thread::sleep_for(std::chrono::nanoseconds(1000));
   }
 
   for (size_t i = 0; i < QueueNum; i++) {
@@ -326,9 +322,7 @@ void BytePSGlobal::Shutdown() {
   if (_push_table) {
     delete _push_table;
   }
-  if(_pull_table){
-    delete _pull_table;
-  }
+
   if (_copy_table) {
     delete _copy_table;
   }
@@ -529,6 +523,7 @@ PSKV& BytePSGlobal::EncodeDefaultKey(uint64_t key, size_t len) {
     BPS_LOG(DEBUG) << "key " << key << " assigned to server " << server
                    << ", accumulated workload for this server is "
                    << _server_accumulated_len[server];
+
     ps::Key ps_key = krs[server].begin() + key;
     BPS_CHECK_LT(ps_key, krs[server].end());
     pskv.keys.push_back(ps_key);
