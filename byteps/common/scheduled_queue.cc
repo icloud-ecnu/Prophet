@@ -201,8 +201,10 @@ namespace byteps {
 //
 //                    return nullptr;
 //                }
+                BPS_LOG(INFO) << "door:" << _dooropen;
                 if (_dooropen > 0) {
                     msit = _ms.begin();
+                    task = *msit;
                     _dooropen--;
                     _ms.erase(_ms.begin());
                     task->ready_event = nullptr;
