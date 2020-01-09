@@ -22,19 +22,19 @@ namespace byteps {
 namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-  if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
-    _is_scheduled = true;
-  } else {
-    _is_scheduled = false;
-  }
-
+//  if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
+//    _is_scheduled = true;
+//  } else {
+//    _is_scheduled = false;
+//  }
+_is_scheduled = true;
   size_t credit_in_partition = BytePSGlobal::GetNccl()->GetGroupSize() + 1;
 
   auto byteps_scheduling_credit = getenv("BYTEPS_SCHEDULING_CREDIT");
   credit_in_partition = byteps_scheduling_credit ? atoi(byteps_scheduling_credit) : 0;
-  if (!credit_in_partition) { // disable scheduling by default
-    _is_scheduled = false;
-  }
+//  if (!credit_in_partition) { // disable scheduling by default
+//    _is_scheduled = false;
+//  }
 
   _qt = type;
   _credits = _is_scheduled
@@ -78,7 +78,7 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
   _sq.push_back(entry);
-  if (_is_scheduled) {
+//  if (_is_scheduled) {
     // TODO: below can be optimized to O(n) using insertion sort
     std::sort(
         _sq.begin(), _sq.end(),
@@ -89,7 +89,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
           }
           return (a->priority > b->priority);  // from higher priority to lower
         });
-  }
+//  }
   BPS_CHECK(entry->tensor_name != "");
   BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
                  << " addTask: " << entry->tensor_name << " key: " << entry->key
@@ -129,11 +129,11 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         continue;
       }
     }
-    if (_is_scheduled) {
+//    if (_is_scheduled) {
       if ((*it)->len > _credits) {
         continue;
       }
-    }
+//    }
     if (_rt) {
       if (!_rt->IsKeyReady((*it)->key)) {
         continue;
@@ -142,9 +142,9 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
     }
     task = *it;
     _sq.erase(it);
-    if (_is_scheduled) {
+//    if (_is_scheduled) {
       _credits -= task->len;
-    }
+//    }
 
     BPS_CHECK(task->tensor_name != "");
     BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
@@ -160,7 +160,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
 
 
 std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
-  BPS_CHECK(!_is_scheduled);
+//  BPS_CHECK(!_is_scheduled);
   std::lock_guard<std::mutex> lock(_mutex);
   std::shared_ptr<TensorTableEntry> task;
   for (auto it = _sq.begin(); it != _sq.end(); ++it) {
@@ -192,10 +192,10 @@ uint32_t BytePSScheduledQueue::pendingSize() {
 }
 
 void BytePSScheduledQueue::reportFinish(int size) {
-  if (_is_scheduled) {
+//  if (_is_scheduled) {
     std::lock_guard<std::mutex> lock(_mutex);
     _credits += size;
-  }
+//  }
   return;
 }
 
