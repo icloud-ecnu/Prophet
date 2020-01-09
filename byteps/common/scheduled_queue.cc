@@ -106,7 +106,7 @@ namespace byteps {
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 long long now = getSystemTime();
-                BPS_LOG(INFO) << "PUSH gradient operation is ready: " << entry -> priority << " now:" << now << "  next_timer" << next_timer;
+//                BPS_LOG(INFO) << "PUSH gradient operation is ready: " << entry -> priority << " now:" << now << "  next_timer" << next_timer;
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
                 if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
                     timer = getSystemTime();
@@ -114,7 +114,7 @@ namespace byteps {
                     _dooropen = 11;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                     dynamic_size =  durations[duration_ptr] * B;
-                    BPS_LOG(INFO) << "start!!";
+//                    BPS_LOG(INFO) << "start!!";
                 }
             } else {
                 _sq.push_back(entry);
@@ -201,7 +201,6 @@ namespace byteps {
 //
 //                    return nullptr;
 //                }
-                BPS_LOG(INFO) << "door:" << _dooropen;
                 if (_dooropen > 0) {
                     msit = _ms.begin();
                     task = *msit;
