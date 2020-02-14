@@ -141,19 +141,38 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       _rt->ClearReadyCount((*it)->key);
     }
     task = *it;
-    _sq.erase(it);
-    if (_is_scheduled) {
-      _credits -= task->len;
+    if (_qt == PUSH) {
+        if (_door > 0) {
+            _door--;
+            _sq.erase(it);
+            if (_is_scheduled) {
+                _credits -= task->len;
+            }
+            BPS_CHECK(task->tensor_name != "");
+            BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+                           << " getTask: " << task->tensor_name << " key: " << task->key
+                           << " rank: " << BytePSGlobal::GetLocalRank();
+            task->ready_event = nullptr;
+            // Add for profiling communication traces
+            recorderTs(task);
+            return task;
+        } else {
+            return nullptr;
+        }
+    } else {
+        _sq.erase(it);
+        if (_is_scheduled) {
+            _credits -= task->len;
+        }
+        BPS_CHECK(task->tensor_name != "");
+        BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+                       << " getTask: " << task->tensor_name << " key: " << task->key
+                       << " rank: " << BytePSGlobal::GetLocalRank();
+        task->ready_event = nullptr;
+        // Add for profiling communication traces
+        recorderTs(task);
+        return task;
     }
-
-    BPS_CHECK(task->tensor_name != "");
-    BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
-                   << " getTask: " << task->tensor_name << " key: " << task->key
-                   << " rank: " << BytePSGlobal::GetLocalRank();
-    task->ready_event = nullptr;
-    // Add for profiling communication traces
-    recorderTs(task);
-    return task;
   }
   return nullptr;
 }
@@ -192,6 +211,11 @@ uint32_t BytePSScheduledQueue::pendingSize() {
 }
 
 void BytePSScheduledQueue::reportFinish(int size) {
+  if (_qt == PUSH) {
+      if (_door < 10) {
+          _door++;
+      }
+  }
   if (_is_scheduled) {
     std::lock_guard<std::mutex> lock(_mutex);
     _credits += size;
