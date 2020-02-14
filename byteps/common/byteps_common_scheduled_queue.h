@@ -20,7 +20,6 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <stack>
 #include "common.h"
 #include "ready_table.h"
 

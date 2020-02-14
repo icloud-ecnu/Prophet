@@ -46,7 +46,7 @@ def worker(local_rank, local_size, command):
             os.makedirs(trace_path)
     subprocess.check_call(command, env=my_env, stdout=sys.stdout, stderr=sys.stderr, shell=True)
 
-def launch_bps():
+if __name__ == "__main__":
     print("BytePS launching " + os.environ["DMLC_ROLE"])
     sys.stdout.flush()
     check_env()
@@ -67,7 +67,3 @@ def launch_bps():
 
     else:
         import byteps.server
-
-
-if __name__ == "__main__":
-    launch_bps()

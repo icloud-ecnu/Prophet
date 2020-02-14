@@ -66,7 +66,7 @@ def get_mnist_iterator():
     train_set = MNIST(train=True, transform=dummy_transform)
     train_iter = gluon.data.DataLoader(train_set, args.batch_size, True, num_workers=args.j, last_batch='discard')
     val_set = MNIST(train=False, transform=dummy_transform)
-    val_iter = gluon.data.DataLoader(val_set, args.batch_size, False, num_workers=args.j)
+    val_iter = gluon.data.DataLoader(val_set, args.batch_size, False, num_workers=0)
 
     return train_iter, val_iter, len(train_set)
 
