@@ -8,6 +8,7 @@ import io
 import os
 import sys
 import re
+import shutil
 from shutil import rmtree
 import textwrap
 import shlex
@@ -28,7 +29,7 @@ pytorch_lib = Extension('byteps.torch.c_lib', [])
 # Package meta-data.
 NAME = 'byteps'
 DESCRIPTION = 'A high-performance cross-framework Parameter Server for Deep Learning'
-URL = 'https://github.com/chrisqiqiang/byteps'
+URL = 'https://github.com/bytedance/byteps'
 EMAIL = 'lab-hr@bytedance.com'
 AUTHOR = 'Bytedance Inc.'
 REQUIRES_PYTHON = '>=2.7.0'
@@ -227,6 +228,13 @@ def get_link_flags(build_ext):
 
     raise DistutilsPlatformError(last_err)
 
+def has_rdma_header():
+    ret_code = subprocess.call(
+        "echo '#include <rdma/rdma_cma.h>' | cpp -H -o /dev/null 2>/dev/null", shell=True)
+    if ret_code != 0:
+        import warnings
+        warnings.warn("\n\n No RDMA header file detected. Will disable RDMA for compilation! \n\n")
+    return ret_code==0
 
 def get_common_options(build_ext):
     cpp_flags = get_cpp_flags(build_ext)
@@ -263,12 +271,13 @@ def get_common_options(build_ext):
 
     # RDMA and NUMA libs
     LIBRARIES += ['numa']
-    if int(os.environ.get('BYTEPS_USE_RDMA', 0)):
-        LIBRARIES += ['rdmacm', 'ibverbs']
+    
+    # auto-detect rdma
+    if has_rdma_header():
+        LIBRARIES += ['rdmacm', 'ibverbs', 'rt']
 
     # ps-lite
     EXTRA_OBJECTS = ['3rdparty/ps-lite/build/libps.a',
-                     '3rdparty/ps-lite/deps/lib/libprotobuf-lite.a',
                      '3rdparty/ps-lite/deps/lib/libzmq.a']
 
     return dict(MACROS=MACROS,
@@ -292,8 +301,10 @@ def build_server(build_ext, options):
     server_lib.extra_link_args = options['LINK_FLAGS']
     server_lib.extra_objects = options['EXTRA_OBJECTS']
     server_lib.library_dirs = options['LIBRARY_DIRS']
-    if int(os.environ.get('BYTEPS_USE_RDMA', 0)):
-        server_lib.libraries = ['rdmacm', 'ibverbs']
+
+    # auto-detect rdma
+    if has_rdma_header():
+        server_lib.libraries = ['rdmacm', 'ibverbs', 'rt']
     else:
         server_lib.libraries = []
 
@@ -778,7 +789,7 @@ class custom_build_ext(build_ext):
             make_option = ""
             if os.environ.get('CI', 'false') == 'false':
                 make_option += "-j "
-            if int(os.environ.get('BYTEPS_USE_RDMA', 0)):
+            if has_rdma_header():
                 make_option += "USE_RDMA=1 "
 
             make_process = subprocess.Popen('make ' + make_option,
@@ -853,6 +864,12 @@ class custom_build_ext(build_ext):
 
 
 # Where the magic happens:
+
+if os.path.exists('launcher/launch.py'):
+    if not os.path.exists('bin'):
+        os.mkdir('bin')
+    shutil.copyfile('launcher/launch.py', 'bin/bpslaunch')
+
 setup(
     name=NAME,
     version=about['__version__'],
@@ -889,4 +906,5 @@ setup(
     # which is undesirable.  Luckily, `install` action will install cffi before executing build,
     # so it's only necessary for `build*` or `bdist*` actions.
     setup_requires=[],
+    scripts=['bin/bpslaunch']
 )
