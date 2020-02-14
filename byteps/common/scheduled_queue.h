@@ -45,7 +45,7 @@ class BytePSScheduledQueue {
   bool _is_scheduled;
   QueueType _qt;
   ReadyTable *_rt;
-  int _door = 10;
+  int _door = 20;
 };
 
 }  // namespace common
