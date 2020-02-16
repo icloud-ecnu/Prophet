@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <vector>
 #include "common.h"
+#include <stdlib.h>
 #include "ready_table.h"
 
 namespace byteps {
@@ -45,7 +46,7 @@ class BytePSScheduledQueue {
   bool _is_scheduled;
   QueueType _qt;
   ReadyTable *_rt;
-  int _door = get_env(BPS_DOORS);
+  int _door = atoi(get_env(BPS_DOORS));
 };
 
 }  // namespace common
