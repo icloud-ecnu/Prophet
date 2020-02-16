@@ -46,7 +46,7 @@ class BytePSScheduledQueue {
   bool _is_scheduled;
   QueueType _qt;
   ReadyTable *_rt;
-  int _door = atoi(get_env(BPS_DOORS));
+  int _door = atoi(getenv("BPS_DOORS"));
 };
 
 }  // namespace common
