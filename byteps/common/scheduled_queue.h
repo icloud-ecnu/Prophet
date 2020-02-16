@@ -47,6 +47,7 @@ class BytePSScheduledQueue {
   QueueType _qt;
   ReadyTable *_rt;
   int _door = atoi(getenv("BPS_DOORS"));
+  int _max_door = atoi(getenv("BPS_DOORS"));
 };
 
 }  // namespace common

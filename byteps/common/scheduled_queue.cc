@@ -22,6 +22,8 @@ namespace byteps {
     namespace common {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
+
+            _door = _max_door;
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
@@ -212,7 +214,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::reportFinish(int size) {
             if (_qt == PUSH) {
-                if (_door < 10) {
+                if (_door < _max_door) {
                     _door++;
                 }
             }
