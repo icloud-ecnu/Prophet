@@ -185,6 +185,7 @@ namespace byteps {
                             _ms.erase(_ms.begin());
                             task->ready_event = nullptr;
                             recorderTs(task);
+                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
                             return task;
                         } else {
                             if (dynamic_size == -1) {
