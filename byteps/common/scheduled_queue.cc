@@ -43,6 +43,8 @@ namespace byteps {
                        : 34359738368;  // 32GB, basically disabling credit control
             _rt = nullptr;
 
+            B = B * 125;
+
             switch (_qt) {
                 case REDUCE:
                     if (BytePSGlobal::GetNccl()->IsSignalRoot()) {

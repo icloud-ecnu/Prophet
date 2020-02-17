@@ -73,7 +73,7 @@ namespace byteps {
             int _pulldoor = 0;
             int batchsize = 64;
             int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
-            int B = 125000;
+            int B = atoi(getenv("BPS_NET_B"));
             double _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90, 74, 58, 15, 0};
             int _exec_stage = 0;
             int pull_num = 0;
