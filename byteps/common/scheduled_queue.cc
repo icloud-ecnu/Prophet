@@ -114,7 +114,7 @@ namespace byteps {
                     duration_ptr = 0;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                     dynamic_size =  durations[duration_ptr] * B;
-//                    BPS_LOG(INFO) << "now: " << timer << " next: " << next_timer << " size= " << dynamic_size;
+                    BPS_LOG(INFO) << "now: " << timer << " next: " << next_timer << " size= " << dynamic_size;
                 }
             } else {
                 _sq.push_back(entry);
@@ -175,6 +175,9 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && _ms.size() > 0) {
+                if (next_timer == 0) {
+                    return nullptr;
+                }
                 long long now = getSystemTime();
                 if (next_timer == -1 || now <= next_timer) {
                     msit = _ms.begin();
@@ -185,7 +188,7 @@ namespace byteps {
                             _ms.erase(_ms.begin());
                             task->ready_event = nullptr;
                             recorderTs(task);
-                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
+//                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
                             return task;
                         } else {
                             if (dynamic_size == -1) {
@@ -211,7 +214,7 @@ namespace byteps {
                     } else {
                         dynamic_size =  durations[duration_ptr] * B;
                         next_timer += durations[duration_ptr];
-//                        BPS_LOG(INFO) << "UTD: " << dynamic_size << " , " << next_timer;
+                        BPS_LOG(INFO) << "UTD: size=" << dynamic_size << " , next=" << next_timer;
                     }
                     return nullptr;
                 }
