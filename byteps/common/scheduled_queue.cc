@@ -276,7 +276,9 @@ namespace byteps {
 
         void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {//
             std::lock_guard <std::mutex> lock(_mutex);
-            BPS_LOG(INFO) << task->priority << " finished, size= " << dynamic_size;
+            if (_qt == PUSH) {
+                BPS_LOG(INFO) << task->priority << " finished, size= " << dynamic_size;
+            }
             if (_is_scheduled) {
                 _credits += task -> len;
             }
