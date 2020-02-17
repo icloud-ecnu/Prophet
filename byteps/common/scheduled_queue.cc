@@ -180,18 +180,25 @@ namespace byteps {
                     msit = _ms.begin();
                     if (msit != _ms.end()) {
                         task = *msit;
-                        if (dynamic_size == -1 || task -> len < dynamic_size) {
+                        if (task -> len < dynamic_size) {
                             dynamic_size -= task -> len;
                             _ms.erase(_ms.begin());
                             task->ready_event = nullptr;
                             recorderTs(task);
                             return task;
                         } else {
-                            BPS_LOG(INFO) << "no size";
+                            if (dynamic_size == -1) {
+                                _ms.erase(_ms.begin());
+                                task->ready_event = nullptr;
+                                recorderTs(task);
+                                return task;
+                            } else {
+//                            BPS_LOG(INFO) << "no size";
                             return nullptr;
+                            }
                         }
                     } else {
-                        BPS_LOG(INFO) << "no time";
+//                        BPS_LOG(INFO) << "no time";
                         return nullptr;
                     }
                 } else {
@@ -199,7 +206,7 @@ namespace byteps {
                     if (duration_ptr >= duration_ptr_len) {
                         dynamic_size = -1;
                         next_timer = -1;
-                        BPS_LOG(INFO) << "last order";
+//                        BPS_LOG(INFO) << "last order";
                     } else {
                         dynamic_size =  durations[duration_ptr] * B;
                         next_timer += durations[duration_ptr];
