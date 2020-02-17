@@ -114,7 +114,7 @@ namespace byteps {
                     duration_ptr = 0;
                     next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
                     dynamic_size =  durations[duration_ptr] * B;
-                    BPS_LOG(INFO) << "now: " << timer << " next: " << next_timer << " size= " << dynamic_size;
+//                    BPS_LOG(INFO) << "now: " << timer << " next: " << next_timer << " size= " << dynamic_size;
                 }
             } else {
                 _sq.push_back(entry);
@@ -210,7 +210,7 @@ namespace byteps {
                     } else {
                         dynamic_size =  durations[duration_ptr] * B;
                         next_timer += durations[duration_ptr];
-                        BPS_LOG(INFO) << "UTD: " << dynamic_size << " , " << next_timer;
+//                        BPS_LOG(INFO) << "UTD: " << dynamic_size << " , " << next_timer;
                     }
                     return nullptr;
                 }
@@ -284,7 +284,7 @@ namespace byteps {
         void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {//
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH) {
-                BPS_LOG(INFO) << task->priority << " finished, size= " << dynamic_size;
+//                BPS_LOG(INFO) << task->priority << " finished, size= " << dynamic_size;
             }
             if (_is_scheduled) {
                 _credits += task -> len;
