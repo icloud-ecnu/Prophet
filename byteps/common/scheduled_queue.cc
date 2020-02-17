@@ -188,7 +188,9 @@ namespace byteps {
                             _ms.erase(_ms.begin());
                             task->ready_event = nullptr;
                             recorderTs(task);
-//                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
+                            if (duration_ptr == 0) {
+                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
+                            }
                             return task;
                         } else {
                             if (dynamic_size == -1) {
@@ -214,7 +216,7 @@ namespace byteps {
                     } else {
                         dynamic_size =  durations[duration_ptr] * B;
                         next_timer += durations[duration_ptr];
-                        BPS_LOG(INFO) << "UTD: size=" << dynamic_size << " , next=" << next_timer;
+//                        BPS_LOG(INFO) << "UTD: size=" << dynamic_size << " , next=" << next_timer;
                     }
                     return nullptr;
                 }
