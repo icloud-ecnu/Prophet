@@ -62,8 +62,7 @@ namespace byteps {
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
             std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
-            std::multiset<int, std::greater<int> > _mystack;
-            std::stack<int> _mystackpull;
+            std::stack<int> _mystack;
             std::mutex _mutex;
             uint64_t _credits;
             bool _is_scheduled;
