@@ -23,11 +23,9 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-            if (batchsize > 32) {
-                for (int i = 0; i < 13; i++) {
-                    _backward_exec[i] *= batchsize/32;
-                    _forward_exec[i] *= batchsize/32;
-                }
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] *= (int)((double)batchsize/64);
+                _forward_exec[i] *= (int)((double)batchsize/64);
             }
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= B;
@@ -229,7 +227,7 @@ namespace byteps {
                     _stagestart = 1;
                     _meetzero = 0;
                     _sizepointer = 0;
-                    _dooropen = 11;
+                    _dooropen = _door;
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
@@ -432,7 +430,7 @@ namespace byteps {
             }
             if (_qt == PUSH) {
                 if (_meetzero) {
-                    if (_dooropen < 11)
+                    if (_dooropen < _door)
                         _dooropen++;
                 }
             }
