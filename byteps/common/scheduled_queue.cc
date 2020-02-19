@@ -43,9 +43,6 @@ namespace byteps {
                        : 34359738368;  // 32GB, basically disabling credit control
             _rt = nullptr;
 
-            B = B * 125;
-            BPS_LOG(INFO) << "B: " << B;
-
             switch (_qt) {
                 case REDUCE:
                     if (BytePSGlobal::GetNccl()->IsSignalRoot()) {
@@ -79,12 +76,10 @@ namespace byteps {
                         }
                     }
                     _pointer = _init_pointer;
+                    B = B * 125; // B(Mbits/sec) / 8 * 10^6 (=Bytes/sec) / 1000 (=Bytes/ms) => B = B * 125
                     expected_priority = _grad_checkpoint[_pointer];
                     for (int i = 0; i < 13; i++) {
-                        _backward_exec[i] *= (double)batchsize/64;
-                    }
-                    for (int i = 0; i < 13; i++) {
-                        _backward_exec[i] *= B;
+                        _backward_exec[i] *= (double)batchsize/64; // 64 batch size has more exec time than that of 32
                     }
                     break;
                 case COPYH2D:
@@ -109,13 +104,6 @@ namespace byteps {
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
-                if ((entry->tensor_name).find(begin_name) != (entry->tensor_name).npos) {
-                    timer = getSystemTime();
-                    duration_ptr = 0;
-                    next_timer = timer + durations[duration_ptr];  // next_timer is the endline of this stage.
-                    dynamic_size =  durations[duration_ptr] * B;
-                    BPS_LOG(INFO) << "now: " << timer << " next: " << next_timer << " size= " << dynamic_size;
-                }
             } else {
                 _sq.push_back(entry);
             }
@@ -145,6 +133,7 @@ namespace byteps {
             }
         }
 
+        // self defined comparator
         struct isTargetPriority {
             int Priority;
 
@@ -155,6 +144,7 @@ namespace byteps {
             }
         };
 
+        // use binary search in multi-set
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
@@ -174,52 +164,61 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH && _ms.size() > 0) {
-                if (next_timer == 0) {
+            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+                msit = findTask(expected_priority * -1);
+                if (msit == _ms.end()) {
                     return nullptr;
                 }
-                long long now = getSystemTime();
-                if (next_timer == -1 || now <= next_timer) {
-                    msit = _ms.begin();
-                    if (msit != _ms.end()) {
-                        task = *msit;
-                        if (task -> len < dynamic_size) {
-                            dynamic_size -= task -> len;
-                            _ms.erase(_ms.begin());
-                            task->ready_event = nullptr;
-                            recorderTs(task);
-                            if (duration_ptr == 0) {
-                            BPS_LOG(INFO) << task->priority << " added, size remains " << dynamic_size;
-                            }
-                            return task;
-                        } else {
-                            if (dynamic_size == -1) {
-                                _ms.erase(_ms.begin());
-                                task->ready_event = nullptr;
-                                recorderTs(task);
-                                return task;
-                            } else {
-//                            BPS_LOG(INFO) << "no size";
-                            return nullptr;
-                            }
-                        }
+                task = *msit;
+
+                _tensor_part[expected_priority] = task->total_partnum;
+                for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                    _mystack.push(expected_priority * -1);
+                }
+                expected_priority--;
+                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+                    _dequeue = 1;
+                    dynamic_size = _backward_exec[_sizepointer++] * B;
+                }
+                return nullptr;
+            }
+            if (_qt == PUSH && _ms.size() > 0) {
+                msit = findTask(_mystack.top());
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
+                task = *msit;
+                if (task->priority == 0) {
+                    _meetzero = 1;
+                }
+                if (!_meetzero) {
+                    if (dynamic_size > task->len) {
+                        dynamic_size -= task->len;
+                        _ms.erase(msit);
+                        _mystack.pop();
                     } else {
-//                        BPS_LOG(INFO) << "no time";
+                        _dequeue = 0;
+                        _pointer--;
                         return nullptr;
                     }
-                } else {
-                    duration_ptr++;
-                    if (duration_ptr >= duration_ptr_len) {
-                        dynamic_size = -1;
-                        next_timer = -1;
-//                        BPS_LOG(INFO) << "last order";
-                    } else {
-                        dynamic_size =  durations[duration_ptr] * B;
-                        next_timer += durations[duration_ptr];
-//                        BPS_LOG(INFO) << "UTD: size=" << dynamic_size << " , next=" << next_timer;
-                    }
+                } else if (!_dooropen) {
                     return nullptr;
+                } else {
+                    _dooropen--;
+                    _ms.erase(msit);
+                    _mystack.pop();
                 }
+                if (_mystack.empty() && _meetzero) {
+                    _dequeue = 0;
+                    _pointer = 12;
+                    expected_priority = _grad_checkpoint[_pointer];
+                    _meetzero = 0;
+                    _sizepointer = 0;
+                    _dooropen = _door;
+                }
+                task->ready_event = nullptr;
+                recorderTs(task);
+                return task;
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -256,6 +255,7 @@ namespace byteps {
             return nullptr;
         }
 
+
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
             BPS_CHECK(!_is_scheduled);
             std::lock_guard <std::mutex> lock(_mutex);
@@ -287,16 +287,20 @@ namespace byteps {
             return _sq.size();
         }
 
-        void BytePSScheduledQueue::reportFinish(std::shared_ptr < TensorTableEntry > task) {//
+        void BytePSScheduledQueue::reportFinish(int size) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH) {
-//                BPS_LOG(INFO) << task->priority << " finished, size= " << dynamic_size;
-            }
             if (_is_scheduled) {
-                _credits += task -> len;
+                _credits += size;
+            }
+            if (_qt == PUSH) {
+                if (_meetzero) {
+                    if (_dooropen < _door)
+                        _dooropen++;
+                }
             }
             return;
         }
+
 
     }  // namespace common
 }  // namespace byteps
