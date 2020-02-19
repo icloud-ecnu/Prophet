@@ -68,16 +68,13 @@ namespace byteps {
                         if (!strcmp(getenv("MODEL"), "vgg19")) {
                             int tmp1[13] = {-1, 1, 13, 27, 37, 0, 77, 90, 103, 117, 130, 143, 156};
                             double tmp2[13] = {285.4, 196.2, 33.2, 0, 0, 53, 44, 64, 90, 74, 58, 15, 0}; // backward execution time
-                            _init_pointer = 4;
-                            for (int i = 0; i <= _init_pointer; i++) {
+                            for (int i = 0; i < 13; i++) {
                                 _grad_checkpoint[i] = tmp1[i];
                                 _backward_exec[i] = tmp2[i];
                             }
                             B *= 4;
-                            begin_name = "DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_vgg16_predictions_BiasAdd_grad_tuple_control_dependency_1_0";
                         }
                     }
-                    _pointer = _init_pointer;
                     B *= 125; // B(Mbits/sec) / 8 * 10^6 (=Bytes/sec) / 1000 (=Bytes/ms) => B = B * 125
                     expected_priority = _grad_checkpoint[_pointer];
                     for (int i = 0; i < 13; i++) {
