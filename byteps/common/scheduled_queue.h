@@ -69,8 +69,7 @@ namespace byteps {
             int _pulldoor = 0;
             int batchsize = atoi(getenv("Z_BATCH_SIZE"));
             int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
-            int B = atoi(getenv("BPS_NET_B"));
-            int _door = atoi(getenv("BPS_DOORS"));
+            int B = 125000 / 2;
             int _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90,
                                       74, 58, 15, 0};
             int _forward_exec[13] = {0, 1350000, 1400000, 840000, 900000, 1275000, 1620000, 1335000, 1900000, 2700000,
@@ -83,7 +82,7 @@ namespace byteps {
             int _dequeue = 0;
             int _pointer = 12;
             int _stagestart = 1;
-            long long dynamic_size = 0;
+            int dynamic_size;
             int _pushsize = 0;
             int _pullsize = 0;
             int expected_priority = _grad_checkpoint[_pointer];
