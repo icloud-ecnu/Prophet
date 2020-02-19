@@ -23,6 +23,7 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
+            B *= 125;
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= (int)((double)batchsize/64);
                 _forward_exec[i] *= (int)((double)batchsize/64);
