@@ -43,6 +43,8 @@ namespace byteps {
                        : 34359738368;  // 32GB, basically disabling credit control
             _rt = nullptr;
 
+            B = atoi(getenv("BPS_NET_B"));
+
             switch (_qt) {
                 case REDUCE:
                     if (BytePSGlobal::GetNccl()->IsSignalRoot()) {
@@ -76,7 +78,7 @@ namespace byteps {
                         }
                     }
                     _pointer = _init_pointer;
-                    B = B * 125; // B(Mbits/sec) / 8 * 10^6 (=Bytes/sec) / 1000 (=Bytes/ms) => B = B * 125
+                    B *= 125; // B(Mbits/sec) / 8 * 10^6 (=Bytes/sec) / 1000 (=Bytes/ms) => B = B * 125
                     expected_priority = _grad_checkpoint[_pointer];
                     for (int i = 0; i < 13; i++) {
                         _backward_exec[i] *= (double)batchsize/64; // 64 batch size has more exec time than that of 32
@@ -160,11 +162,23 @@ namespace byteps {
             }
         }
 
+
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+                while (_tensor_part[expected_priority] > 0) {
+                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                        _mystack.push(expected_priority * -1);
+                    }
+                    expected_priority--;
+                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+                        _dequeue = 1;
+                        dynamic_size = _backward_exec[_sizepointer++] * B;
+                        return nullptr;
+                    }
+                }
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -204,6 +218,11 @@ namespace byteps {
                 } else if (!_dooropen) {
                     return nullptr;
                 } else {
+                    msit = findTask(_mystack.top());
+                    if (msit == _ms.end()) {
+                        return nullptr;
+                    }
+                    task = *msit;
                     _dooropen--;
                     _ms.erase(msit);
                     _mystack.pop();
