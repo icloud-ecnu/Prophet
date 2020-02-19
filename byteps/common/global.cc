@@ -39,9 +39,6 @@ bool BytePSGlobal::_is_distributed_job;
 bool BytePSGlobal::_is_cross_pcie_switch;
 uint32_t BytePSGlobal::_partition_bytes = 4096000;
 
-//added by chris
-int BytePSGlobal::pushsize[20] = {0};
-
 int BytePSGlobal::_is_trace = 0;
 int BytePSGlobal::_start_step = 10;
 int BytePSGlobal::_end_step = 20;
