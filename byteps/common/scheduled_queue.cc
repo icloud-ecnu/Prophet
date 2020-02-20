@@ -159,9 +159,9 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH) {
+            if (_qt == PUSH && _ms.size() > 0) {
                 BPS_LOG(INFO) << "expected_priority=" << expected_priority << ", pointer=" << _pointer << ", dynamic size=" << dynamic_size << ", meetzero=" << _meetzero << ", door=" << _dooropen
-                        << "stack size=" << _mystack.size() << ", ms size=" << _ms.size();
+                        << "stack size=" << _mystack.size() << ", ms size=" << _ms.size() << ", dequeue=" << _dequeue;
             }
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 while (_tensor_part[expected_priority] > 0) {
