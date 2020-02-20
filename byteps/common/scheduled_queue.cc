@@ -168,7 +168,7 @@ namespace byteps {
                     _mystack.push(expected_priority * -1);
                 }
                 expected_priority--;
-                if (_pointer == 0 || expected_priority == _grad_checkpoint[_pointer - 1]) {
+                if (_pointer <= 0 || expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
                     dynamic_size = _backward_exec[_sizepointer++];
                 }
@@ -190,7 +190,9 @@ namespace byteps {
                         _mystack.pop();
                     } else {
                         _dequeue = 0;
-                        _pointer--;
+                        if (_pointer > 0) {
+                            _pointer--;
+                        }
                         _stagestart = 1;
                         BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
                         return nullptr;
@@ -203,9 +205,11 @@ namespace byteps {
                         return nullptr;
                     }
                     task = *msit;
-                    _dooropen--;
-                    _ms.erase(msit);
-                    _mystack.pop();
+                    if (_dooropen > 0) {
+                        _dooropen--;
+                        _ms.erase(msit);
+                        _mystack.pop();
+                    }
                 }
                 if (_mystack.empty() && _meetzero) {
                     _dequeue = 0;
