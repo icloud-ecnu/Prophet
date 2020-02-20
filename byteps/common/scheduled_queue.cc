@@ -164,17 +164,6 @@ namespace byteps {
                         << "stack size=" << _mystack.size() << ", ms size=" << _ms.size() << ", dequeue=" << _dequeue;
             }
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                while (_tensor_part[expected_priority] > 0) {
-                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                        _mystack.push(expected_priority * -1);
-                    }
-                    expected_priority--;
-                    if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-                        _dequeue = 1;
-                        dynamic_size = _backward_exec[_sizepointer++];
-                        return nullptr;
-                    }
-                }
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
