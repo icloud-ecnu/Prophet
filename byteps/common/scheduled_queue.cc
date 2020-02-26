@@ -24,6 +24,8 @@ namespace byteps {
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
             _credit = _max_credit;
+            blocking = 0;
+            processed = 0;
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
@@ -159,6 +161,7 @@ namespace byteps {
                         recorderTs(task);
                         return task;
                     } else {
+                        blocking = 1;
                         return nullptr;
                     }
                 } else {
@@ -214,8 +217,10 @@ namespace byteps {
 
         void BytePSScheduledQueue::reportFinish(int size) {
             if (_qt == PUSH) {
-                _credit += size;
-                if (_credit > _max_credit) {
+                processed += size;
+                if (blocking == 1 && processed + _credit == _max_credit) {
+                    blocking = 0;
+                    processed = 0;
                     _credit = _max_credit;
                 }
             }

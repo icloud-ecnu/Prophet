@@ -48,6 +48,8 @@ class BytePSScheduledQueue {
   ReadyTable *_rt;
   int _credit = atoi(getenv("BPS_CREDIT"));
   int _max_credit = atoi(getenv("BPS_CREDIT"));
+  int blocking = 0;
+  int processed = 0;
 };
 
 }  // namespace common
