@@ -222,6 +222,7 @@ namespace byteps {
                     blocking = 0;
                     processed = 0;
                     _credit = _max_credit;
+                    BPS_LOG(INFO) << "reset";
                 }
             }
             if (_is_scheduled) {
