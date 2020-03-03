@@ -26,11 +26,9 @@ namespace byteps {
             B *= 125;
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= (int)((double)batchsize/64);
-                _forward_exec[i] *= (int)((double)batchsize/64);
             }
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= B;
-                _forward_exec[i] *= B;
             }
 
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
