@@ -217,6 +217,9 @@ namespace byteps {
                     _meetzero = 0;
                     _sizepointer = 0;
                     _dooropen = _door;
+                    for (int i = 0; i < 160; i++) {
+                        _visited[i] = 0;
+                    }
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
