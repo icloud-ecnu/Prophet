@@ -185,6 +185,7 @@ namespace byteps {
                     } else {
                         _dequeue = 0;
                         if (_pointer > 0) {
+                            BPS_LOG(INFO) << "pointer-1=" <<_pointer;
                             _pointer--;
                         }
                         _stagestart = 1;
