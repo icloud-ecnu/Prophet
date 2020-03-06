@@ -168,12 +168,13 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
-                BPS_LOG(INFO) << "top:" << _mystack.top();
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
+                    BPS_LOG(INFO) << "top:" << _mystack.top() << "not found in " << _ms.size();
                     return nullptr;
                 }
                 task = *msit;
+                BPS_LOG(INFO) << "task" << task->priority;
                 if (task->priority == 0) {
                     _meetzero = 1;
                 }
@@ -193,12 +194,15 @@ namespace byteps {
                         return nullptr;
                     }
                 } else if (_bps_credit < task -> len) {
+                    BPS_LOG(INFO) << "no space";
                     return nullptr;
                 } else if (_bps_credit > task->len) {
+                    BPS_LOG(INFO) << "credit " << _bps_credit << " ==> " << (_bps_credit - task->len);
                     _bps_credit -= task->len;
                     _ms.erase(msit);
                     _mystack.pop();
                 } else if (_mystack.empty() && _meetzero) {
+                    BPS_LOG(INFO) << "reset";
                     _dequeue = 0;
                     _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
