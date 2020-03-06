@@ -64,6 +64,7 @@ namespace byteps {
             uint64_t _credits;
             bool _is_scheduled;
             int _tensor_part[160] = {0};
+            int _visited[160] = {0};
             int _meetzero = 0;
             int _dooropen = 11;
             int _pulldoor = 0;

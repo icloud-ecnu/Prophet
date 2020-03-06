@@ -135,7 +135,6 @@ namespace byteps {
         };
 
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
-            std::lock_guard <std::mutex> lock(_mutex);
             if (_ms.size() == 0) {
                 return _ms.end();
             }
@@ -159,16 +158,17 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue) {
                 BPS_LOG(INFO) << "expected" << expected_priority;
-                for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                    _mystack.push(expected_priority * -1);
-                    if (expected_priority == 0) {
-                        _meetzero = 1;
+                if (!_visited[expected_priority]) {
+                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                        _mystack.push(expected_priority * -1);
+                        if (expected_priority == 0) {
+                            _meetzero = 1;
+                        }
                     }
+                    _visited[expected_priority] = 1;
                 }
-                _tensor_part[expected_priority] = 0; // process only once
-                expected_priority--;
-                if (expected_priority < -1) {
-                    exit(-1);
+                if (expected_priority >= 0) {
+                    expected_priority--;
                 }
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
