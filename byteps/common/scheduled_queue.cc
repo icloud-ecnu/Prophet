@@ -84,7 +84,6 @@ namespace byteps {
                     if (BytePSGlobal::IsRootDevice()) {
                         _rt = BytePSGlobal::GetPullTable();
                     }
-                    _sizepointer = 1;
                     break;
                 default:
                     break;
@@ -289,8 +288,8 @@ namespace byteps {
             if (_is_scheduled) {
                 _credits += size;
             }
-            if (_qt == PUSH) {
-                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " ==> " << (_bps_credit + size);
+            if (_qt == PUSH && size > 0 && _meetzero) {
+                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size " ==> " << (_bps_credit + size);
                 _bps_credit += size;
             }
             return;
