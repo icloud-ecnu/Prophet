@@ -155,14 +155,15 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "expected" << expected_priority;
-                BPS_CHECK_GE(expected_priority, 0);
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                     _mystack.push(expected_priority * -1);
-                    BPS_LOG(INFO) << "pushed " << x << " times.";
+                    if (expected_priority == 0) {
+                        _meetzero = 1;
+                    }
                 }
                 _tensor_part[expected_priority] = 0; // process only once
                 expected_priority--;
-                if (expected_priority == -1) {
+                if (expected_priority < -1) {
                     exit(-1);
                 }
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
@@ -175,14 +176,11 @@ namespace byteps {
             if (_qt == PUSH && _ms.size() > 0) {
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
-                    BPS_LOG(INFO) << "top:" << _mystack.top() << "not found in " << _ms.size();
+                    BPS_LOG(INFO) << "top " << _mystack.top() << " not found in " << _ms.size();
                     return nullptr;
                 }
                 task = *msit;
-                BPS_LOG(INFO) << "task" << task->priority;
-                if (task->priority == 0) {
-                    _meetzero = 1;
-                }
+                BPS_LOG(INFO) << "task " << task->priority;
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
@@ -191,7 +189,7 @@ namespace byteps {
                     } else {
                         _dequeue = 0;
                         if (_pointer > 0) {
-                            BPS_LOG(INFO) << "pointer-1=" <<_pointer;
+                            BPS_LOG(INFO) << "pointer - 1 = " <<_pointer;
                             _pointer--;
                         }
                         _stagestart = 1;
