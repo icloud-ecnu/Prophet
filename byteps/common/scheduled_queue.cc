@@ -156,7 +156,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH && !_dequeue) {
+            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "expected" << expected_priority;
                 if (!_visited[expected_priority]) {
                     for (int x = 0; x < _tensor_part[expected_priority]; x++) {
@@ -177,7 +177,7 @@ namespace byteps {
                 }
                 return nullptr;
             }
-            if (_qt == PUSH && _dequeue) {
+            if (_qt == PUSH && _dequeue && _ms.size() > 0) {
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     BPS_LOG(INFO) << "top " << _mystack.top() << " not found in " << _ms.size();
