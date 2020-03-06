@@ -289,7 +289,7 @@ namespace byteps {
                 _credits += size;
             }
             if (_qt == PUSH && size > 0 && _meetzero) {
-                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size " ==> " << (_bps_credit + size);
+                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
                 _bps_credit += size;
             }
             return;
