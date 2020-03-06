@@ -135,6 +135,10 @@ namespace byteps {
         };
 
         std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
+            std::lock_guard <std::mutex> lock(_mutex);
+            if (_ms.size() == 0) {
+                return _ms.end();
+            }
             std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
             e->priority = priority;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
@@ -153,7 +157,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+            if (_qt == PUSH && !_dequeue) {
                 BPS_LOG(INFO) << "expected" << expected_priority;
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                     _mystack.push(expected_priority * -1);
@@ -173,7 +177,7 @@ namespace byteps {
                 }
                 return nullptr;
             }
-            if (_qt == PUSH && _ms.size() > 0) {
+            if (_qt == PUSH && _dequeue) {
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     BPS_LOG(INFO) << "top " << _mystack.top() << " not found in " << _ms.size();
