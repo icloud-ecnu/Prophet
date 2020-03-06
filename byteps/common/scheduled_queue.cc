@@ -212,7 +212,8 @@ namespace byteps {
                     _bps_credit -= task->len;
                     _ms.erase(msit);
                     _mystack.pop();
-                } else if (_mystack.empty() && _meetzero) {
+                }
+                if (_mystack.empty() && _meetzero) {
                     BPS_LOG(INFO) << "reset";
                     _dequeue = 0;
                     _pointer = 12;
