@@ -163,7 +163,7 @@ namespace byteps {
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
                     dynamic_size = _backward_exec[_sizepointer++];
-//                    BPS_LOG(INFO) << "dynamic_size = " << dynamic_size;
+                    BPS_LOG(INFO) << "expected:" << expected_priority << "dynamic_size = " << dynamic_size;
                 }
                 return nullptr;
             }
@@ -285,7 +285,7 @@ namespace byteps {
                 _credits += size;
             }
             if (_qt == PUSH && size > 0 && _meetzero) {
-//                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
+                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
                 _bps_credit += size;
             }
             return;
