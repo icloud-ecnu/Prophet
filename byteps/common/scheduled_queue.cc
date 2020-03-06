@@ -154,26 +154,21 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                msit = findTask(expected_priority * -1);
-                if (msit == _ms.end()) {
-                    return nullptr;
-                }
-                task = *msit;
-
-                _tensor_part[expected_priority] = task->total_partnum;
+                BPS_CHECK_GE(expected_priority, 0);
                 for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                     _mystack.push(expected_priority * -1);
                 }
+                _tensor_part[expected_priority] = 0; // process only once
                 expected_priority--;
-                if (_pointer <= 0 || expected_priority == _grad_checkpoint[_pointer - 1]) {
+                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
                     dynamic_size = _backward_exec[_sizepointer++];
-                    BPS_LOG(INFO) << "dynamic_size = " << dynamic_size;
+//                    BPS_LOG(INFO) << "dynamic_size = " << dynamic_size;
                 }
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
-                BPS_LOG(INFO) << "top:" << _mystack.top();
+//                BPS_LOG(INFO) << "top:" << _mystack.top();
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -290,7 +285,7 @@ namespace byteps {
                 _credits += size;
             }
             if (_qt == PUSH && size > 0 && _meetzero) {
-                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
+//                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
                 _bps_credit += size;
             }
             return;
