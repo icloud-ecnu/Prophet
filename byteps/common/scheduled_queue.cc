@@ -182,6 +182,16 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _dequeue && _ms.size() > 0) {
+                if (_mystack.size() == 0) {
+                    _dequeue = 0;
+                    if (_pointer > 0) {
+                        BPS_LOG(INFO) << "pointer - 1 = " <<_pointer;
+                        _pointer--;
+                    }
+                    _stagestart = 1;
+                    BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+                    return nullptr;
+                }
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     BPS_LOG(INFO) << "top " << _mystack.top() << " not found in " << _ms.size();
