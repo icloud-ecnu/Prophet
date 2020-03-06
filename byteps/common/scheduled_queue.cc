@@ -158,6 +158,10 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 BPS_LOG(INFO) << "expected" << expected_priority;
+                msit = findTask(expected_priority * -1);
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
                 if (!_visited[expected_priority]) {
                     for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                         _mystack.push(expected_priority * -1);
