@@ -168,7 +168,7 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _ms.size() > 0) {
-//                BPS_LOG(INFO) << "top:" << _mystack.top();
+                BPS_LOG(INFO) << "top:" << _mystack.top();
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
                     return nullptr;
