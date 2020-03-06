@@ -194,14 +194,11 @@ namespace byteps {
                     }
                 } else if (_bps_credit < task -> len) {
                     return nullptr;
-                } else {
-                    if (_bps_credit > task->len) {
-                        _bps_credit -= task->len;
-                        _ms.erase(msit);
-                        _mystack.pop();
-                    }
-                }
-                if (_mystack.empty() && _meetzero) {
+                } else if (_bps_credit > task->len) {
+                    _bps_credit -= task->len;
+                    _ms.erase(msit);
+                    _mystack.pop();
+                } else if (_mystack.empty() && _meetzero) {
                     _dequeue = 0;
                     _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
