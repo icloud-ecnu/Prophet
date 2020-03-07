@@ -144,8 +144,13 @@ namespace byteps {
                 }
                 task = *it;
                 if (_qt == PUSH) {
-                    BPS_LOG(INFO) << _credit << " --- " << task->len << "(" << task->priority << ")";
-                    if (_credit > task->len) {
+                    BPS_LOG(INFO) << _credit << " --- " << task->len    << "(" << task->priority << ")";
+                    if (task->priority == 0) {
+                        task->ready_event = nullptr;
+                        // Add for profiling communication traces
+                        recorderTs(task);
+                        return task;
+                    } else if (_credit > task->len) {
                         _credit -= task->len;
                         BPS_LOG(INFO) << _credit << " left.";
                         _sq.erase(it);
