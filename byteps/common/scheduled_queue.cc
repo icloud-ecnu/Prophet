@@ -157,7 +157,6 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                BPS_LOG(INFO) << "expected" << expected_priority;
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -177,7 +176,6 @@ namespace byteps {
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
                     dynamic_size = _backward_exec[_sizepointer++];
-                    BPS_LOG(INFO) << "expected:" << expected_priority << "dynamic_size = " << dynamic_size;
                 }
                 return nullptr;
             }
@@ -185,7 +183,6 @@ namespace byteps {
                 if (_mystack.size() == 0) {
                     _dequeue = 0;
                     if (_pointer > 0) {
-                        BPS_LOG(INFO) << "pointer - 1 = " <<_pointer;
                         _pointer--;
                     }
                     _stagestart = 1;
@@ -194,11 +191,9 @@ namespace byteps {
                 }
                 msit = findTask(_mystack.top());
                 if (msit == _ms.end()) {
-                    BPS_LOG(INFO) << "top " << _mystack.top() << " not found in " << _ms.size();
                     return nullptr;
                 }
                 task = *msit;
-                BPS_LOG(INFO) << "task " << task->priority;
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
@@ -207,7 +202,6 @@ namespace byteps {
                     } else {
                         _dequeue = 0;
                         if (_pointer > 0) {
-                            BPS_LOG(INFO) << "pointer - 1 = " <<_pointer;
                             _pointer--;
                         }
                         _stagestart = 1;
@@ -215,16 +209,13 @@ namespace byteps {
                         return nullptr;
                     }
                 } else if (_bps_credit < task -> len) {
-                    BPS_LOG(INFO) << "no space";
                     return nullptr;
                 } else if (_bps_credit > task->len) {
-                    BPS_LOG(INFO) << "credit " << _bps_credit << " ==> " << (_bps_credit - task->len);
                     _bps_credit -= task->len;
                     _ms.erase(msit);
                     _mystack.pop();
                 }
                 if (_mystack.empty() && _meetzero) {
-                    BPS_LOG(INFO) << "reset";
                     _dequeue = 0;
                     _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
@@ -312,7 +303,6 @@ namespace byteps {
                 _credits += size;
             }
             if (_qt == PUSH && size > 0 && _meetzero) {
-                BPS_LOG(INFO) << "_bps_credit " << _bps_credit << " + " << size << " ==> " << (_bps_credit + size);
                 _bps_credit += size;
             }
             return;
