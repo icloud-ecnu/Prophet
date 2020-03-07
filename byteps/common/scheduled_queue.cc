@@ -144,7 +144,7 @@ namespace byteps {
                 }
                 task = *it;
                 if (_qt == PUSH) {
-                    if (_credit > 0) {
+                    if (_credit > task->len) {
                         _credit -= task->len;
                         _sq.erase(it);
                         if (_is_scheduled) {
@@ -213,6 +213,7 @@ namespace byteps {
         }
 
         void BytePSScheduledQueue::reportFinish(int size) {
+            std::lock_guard<std::mutex> lock(_mutex);
             if (_qt == PUSH) {
                 _credit += size;
                 if (_credit > _max_credit) {
@@ -220,7 +221,6 @@ namespace byteps {
                 }
             }
             if (_is_scheduled) {
-                std::lock_guard<std::mutex> lock(_mutex);
                 _credits += size;
             }
             return;
