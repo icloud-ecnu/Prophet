@@ -144,8 +144,10 @@ namespace byteps {
                 }
                 task = *it;
                 if (_qt == PUSH) {
+                    BPS_LOG(INFO) << _credit << " --- " << task->len << "(" << task->priority << ")";
                     if (_credit > task->len) {
                         _credit -= task->len;
+                        BPS_LOG(INFO) << _credit << " left.";
                         _sq.erase(it);
                         if (_is_scheduled) {
                             _credits -= task->len;
@@ -159,6 +161,7 @@ namespace byteps {
                         recorderTs(task);
                         return task;
                     } else {
+                        BPS_LOG(INFO) << "no space.";
                         return nullptr;
                     }
                 } else {
@@ -215,8 +218,10 @@ namespace byteps {
         void BytePSScheduledQueue::reportFinish(int size) {
             std::lock_guard<std::mutex> lock(_mutex);
             if (_qt == PUSH) {
+                BPS_LOG(INFO) << _credit << " + " << size << " = " << (_credit + size);
                 _credit += size;
                 if (_credit > _max_credit) {
+                    BPS_LOG(INFO) << "set max " << _max_credit;
                     _credit = _max_credit;
                 }
             }
