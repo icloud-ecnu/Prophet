@@ -143,16 +143,11 @@ namespace byteps {
                     _rt->ClearReadyCount((*it)->key);
                 }
                 task = *it;
-                if (_qt == PUSH) {
-                    BPS_LOG(INFO) << _credit << " --- " << task->len    << "(" << task->priority << ")";
-                    if (task->priority == 0) {
-                        task->ready_event = nullptr;
-                        // Add for profiling communication traces
-                        recorderTs(task);
-                        return task;
-                    } else if (_credit > task->len) {
+                if (_qt == PUSH && (task->tensor_name).find("gradient") != (task->tensor_name).npos) {
+//                    BPS_LOG(INFO) << _credit << " --- " << task->len    << "(" << task->priority << ")";
+                    if (_credit > task->len) {
                         _credit -= task->len;
-                        BPS_LOG(INFO) << _credit << " left.";
+//                        BPS_LOG(INFO) << _credit << " left.";
                         _sq.erase(it);
                         if (_is_scheduled) {
                             _credits -= task->len;
@@ -166,7 +161,7 @@ namespace byteps {
                         recorderTs(task);
                         return task;
                     } else {
-                        BPS_LOG(INFO) << "no space.";
+//                        BPS_LOG(INFO) << "no space.";
                         return nullptr;
                     }
                 } else {
@@ -223,10 +218,8 @@ namespace byteps {
         void BytePSScheduledQueue::reportFinish(int size) {
             std::lock_guard<std::mutex> lock(_mutex);
             if (_qt == PUSH) {
-                BPS_LOG(INFO) << _credit << " + " << size << " = " << (_credit + size);
                 _credit += size;
                 if (_credit > _max_credit) {
-                    BPS_LOG(INFO) << "set max " << _max_credit;
                     _credit = _max_credit;
                 }
             }
