@@ -206,7 +206,7 @@ namespace byteps {
                 if (immed) {
                     // 如果网络状态特别好，直接取队首元素
                     msit = _ms.begin();
-                    if (msit == nullptr) {
+                    if (msit == _ms.end()) {
                         return nullptr; // 确保非空
                     }
                     task = *msit;
@@ -226,27 +226,7 @@ namespace byteps {
                     recorderTs(task);
                     return task;
                 }
-            }
-            if (_mystack.size() == 0) {
-                _dequeue = 0;
-                if (_pointer > 0) {
-                    _pointer--;
-                }
-                _stagestart = 1;
-                BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                return nullptr;
-            }
-            msit = findTask(_mystack.top());
-            if (msit == _ms.end()) {
-                return nullptr;
-            }
-            task = *msit;
-            if (!_meetzero) {
-                if (dynamic_size > task->len) {
-                    dynamic_size -= task->len;
-                    _ms.erase(msit);
-                    _mystack.pop();
-                } else {
+                if (_mystack.size() == 0) {
                     _dequeue = 0;
                     if (_pointer > 0) {
                         _pointer--;
@@ -255,129 +235,146 @@ namespace byteps {
                     BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
                     return nullptr;
                 }
-            } else if (_bps_credit < task->len) {
-                return nullptr;
-            } else if (_bps_credit > task->len) {
-                _bps_credit -= task->len;
-                _ms.erase(msit);
-                _mystack.pop();
-            }
-            if (_mystack.empty() && _meetzero) {
-                _dequeue = 0;
-                _pointer = 12;
-                expected_priority = _grad_checkpoint[_pointer];
-                _stagestart = 1;
-                _meetzero = 0;
-                _sizepointer = 0;
-                _dooropen = _door;
-                _bps_credit = atoi(getenv("BPS_CREDIT"));
-                for (int i = 0; i < 160; i++) {
-                    _visited[i] = 0;
+                msit = findTask(_mystack.top());
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
+                task = *msit;
+                if (!_meetzero) {
+                    if (dynamic_size > task->len) {
+                        dynamic_size -= task->len;
+                        _ms.erase(msit);
+                        _mystack.pop();
+                    } else {
+                        _dequeue = 0;
+                        if (_pointer > 0) {
+                            _pointer--;
+                        }
+                        _stagestart = 1;
+                        BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+                        return nullptr;
+                    }
+                } else if (_bps_credit < task->len) {
+                    return nullptr;
+                } else if (_bps_credit > task->len) {
+                    _bps_credit -= task->len;
+                    _ms.erase(msit);
+                    _mystack.pop();
+                }
+                if (_mystack.empty() && _meetzero) {
+                    _dequeue = 0;
+                    _pointer = 12;
+                    expected_priority = _grad_checkpoint[_pointer];
+                    _stagestart = 1;
+                    _meetzero = 0;
+                    _sizepointer = 0;
+                    _dooropen = _door;
+                    _bps_credit = atoi(getenv("BPS_CREDIT"));
+                    for (int i = 0; i < 160; i++) {
+                        _visited[i] = 0;
+                    }
+                }
+                task->ready_event = nullptr;
+                recorderTs(task);
+                return task;
+            } else {
+                for (
+                        auto it = _sq.begin();
+                        it != _sq.
+
+                                end();
+
+                        ++it) {
+
+                    if ((*it)->ready_event) {
+                        if (!(*it)->ready_event->
+
+                                Ready()
+
+                                ) {
+                            continue;
+                        }
+                    }
+                    if (_is_scheduled) {
+                        if ((*it)->len > _credits)
+                            continue;
+                    }
+                    if (_rt) {
+                        if (!_rt->
+                                IsKeyReady((*it)
+                                                   ->key)) {
+                            continue;
+                        }
+                        _rt->
+                                ClearReadyCount((*it)
+                                                        ->key);
+                    }
+                    task = *it;
+                    if (_is_scheduled) {
+                        _credits -= task->
+                                len;
+                    }
+                    _sq.
+                            erase(it);
+                    BPS_CHECK(task->tensor_name != "");
+                    BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
+                                   << " getTask: " << task->tensor_name << " key: " << task->key
+                                   << " rank: " <<
+
+                                   BytePSGlobal::GetLocalRank();
+
+                    task->
+                            ready_event = nullptr;
+                    recorderTs(task);
+                    return
+                            task;
                 }
             }
-            task->ready_event = nullptr;
-            recorderTs(task);
-            return task;
+
+            return nullptr;
         }
 
-        else {
-        for (
-        auto it = _sq.begin();
-        it != _sq.
+        std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
+            BPS_CHECK(!_is_scheduled);
+            std::lock_guard <std::mutex> lock(_mutex);
+            std::shared_ptr <TensorTableEntry> task;
+            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+                if ((*it)->ready_event) {
+                    BPS_CHECK((*it)->ready_event->Ready());
+                }
+                if ((*it)->key != (uint64_t) key) {
+                    continue;
+                }
+                task = *it;
+                _sq.erase(it);
 
-        end();
-
-        ++it) {
-
-        if ((*it)->ready_event) {
-        if (!(*it)->ready_event->
-
-        Ready()
-
-        ) {
-        continue;
-    }
-}
-if (_is_scheduled) {
-if ((*it)->len > _credits)
-continue;
-}
-if (_rt) {
-if (!_rt->
-IsKeyReady((*it)
-->key)) {
-continue;
-}
-_rt->
-ClearReadyCount((*it)
-->key);
-}
-task = *it;
-if (_is_scheduled) {
-_credits -= task->
-len;
-}
-_sq.
-erase(it);
-BPS_CHECK(task->tensor_name != "");
-BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
-<< " getTask: " << task->tensor_name << " key: " << task->key
-<< " rank: " <<
-
-BytePSGlobal::GetLocalRank();
-
-task->
-ready_event = nullptr;
-recorderTs(task);
-return
-task;
-}
-}
-
-return nullptr;
-}
-
-std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
-    BPS_CHECK(!_is_scheduled);
-    std::lock_guard <std::mutex> lock(_mutex);
-    std::shared_ptr <TensorTableEntry> task;
-    for (auto it = _sq.begin(); it != _sq.end(); ++it) {
-        if ((*it)->ready_event) {
-            BPS_CHECK((*it)->ready_event->Ready());
+                BPS_CHECK(task->tensor_name != "");
+                BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
+                               << " getTask(key): " << task->tensor_name
+                               << " key: " << task->key
+                               << " rank: " << BytePSGlobal::GetLocalRank();
+                task->ready_event = nullptr;
+                recorderTs(task);
+                return task;
+            }
+            return nullptr;
         }
-        if ((*it)->key != (uint64_t) key) {
-            continue;
+
+        uint32_t BytePSScheduledQueue::pendingSize() {
+            std::lock_guard <std::mutex> lock(_mutex);
+            return _sq.size();
         }
-        task = *it;
-        _sq.erase(it);
 
-        BPS_CHECK(task->tensor_name != "");
-        BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
-                       << " getTask(key): " << task->tensor_name
-                       << " key: " << task->key
-                       << " rank: " << BytePSGlobal::GetLocalRank();
-        task->ready_event = nullptr;
-        recorderTs(task);
-        return task;
-    }
-    return nullptr;
-}
+        void BytePSScheduledQueue::reportFinish(int size) {
+            std::lock_guard <std::mutex> lock(_mutex);
+            if (_is_scheduled) {
+                _credits += size;
+            }
+            if (_qt == PUSH && size > 0 && _meetzero) {
+                _bps_credit += size;
+            }
+            return;
+        }
 
-uint32_t BytePSScheduledQueue::pendingSize() {
-    std::lock_guard <std::mutex> lock(_mutex);
-    return _sq.size();
-}
-
-void BytePSScheduledQueue::reportFinish(int size) {
-    std::lock_guard <std::mutex> lock(_mutex);
-    if (_is_scheduled) {
-        _credits += size;
-    }
-    if (_qt == PUSH && size > 0 && _meetzero) {
-        _bps_credit += size;
-    }
-    return;
-}
-
-}  // namespace common
+    }  // namespace common
 }  // namespace byteps
