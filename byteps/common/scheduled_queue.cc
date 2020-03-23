@@ -215,7 +215,9 @@ namespace byteps {
                         // 如果已经是之前区间的东西（因为有可能一下子塞进很多，不一定是边界了）
                         // 那么检查一下队尾
                         BPS_LOG(INFO) << "now check end --";
-                        msit = _ms.end()--;
+                        while (msit + 1 != _ms.end()) {
+                            msit++;
+                        }
                         task = *msit;
                         if (task->priority <= expected_priority) {
                             // 那么就说明这个区间真的全部传完了，因为是优先级队列，那就不传了
