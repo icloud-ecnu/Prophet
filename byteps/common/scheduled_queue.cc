@@ -158,7 +158,7 @@ namespace byteps {
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
-            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && _ms.size() > 0 && !_dequeue) {
                 int _section;
                 for (int i = 0; i < _pointer; i++) {
