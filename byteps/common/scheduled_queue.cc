@@ -215,8 +215,8 @@ namespace byteps {
                         // 如果已经是之前区间的东西（因为有可能一下子塞进很多，不一定是边界了）
                         // 那么检查一下队尾
                         BPS_LOG(INFO) << "now check end --";
-                        while (msit + 1 != _ms.end()) {
-                            msit++;
+                        while (std::next(msit, 1) != _ms.end()) {
+                            msit = std::next(msit, 1);
                         }
                         task = *msit;
                         if (task->priority <= expected_priority) {
