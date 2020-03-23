@@ -162,8 +162,8 @@ namespace byteps {
             msit;
             int _section;
             for (int i = 0; i < _pointer; i++) {
-                if (priority > _grad_checkpoint[i] && priority <= _grad_checkpoint[i + 1]) {
-                    _section = expected_priority;
+                if (expected_priority > _grad_checkpoint[i] && expected_priority <= _grad_checkpoint[i + 1]) {
+                    _section = i;
                     break;
                 }
             }
