@@ -161,7 +161,7 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             msit;
             if (_qt == PUSH && _ms.size() > 0 && !_dequeue) {
-                BPS_LOG(INFO) << "expected_priority = " << expected_priority;
+                BPS_LOG(TRACE) << "expected_priority = " << expected_priority;
                 int _section;
                 for (int i = 0; i < _pointer; i++) {
                     if (expected_priority > _grad_checkpoint[i] && expected_priority <= _grad_checkpoint[i + 1]) {
@@ -169,7 +169,7 @@ namespace byteps {
                         break;
                     }
                 }
-                BPS_LOG(INFO) << "Section = " << _section;
+                BPS_LOG(TRACE) << "Section = " << _section;
                 if (can_cover[_section] <= _backward_exec[_section]) {
                     // 如果一共就这么点，网络带宽特别好，能全部传完
                     // 那就不要阻塞了，直接开始传
@@ -177,8 +177,8 @@ namespace byteps {
                     immed = 1;
                     // pointer--，然后准备下一个期望的点，下面的 if 里面入栈的内容全部不用做了
                     expected_priority = _grad_checkpoint[--_pointer];
-                    BPS_LOG(INFO) << "expected_priority ----> " << expected_priority;
-                    BPS_LOG(INFO) << "immed";
+                    BPS_LOG(TRACE) << "expected_priority ----> " << expected_priority;
+                    BPS_LOG(TRACE) << "immed";
                     return nullptr;
                 }
             }
@@ -213,7 +213,7 @@ namespace byteps {
                         return nullptr; // 确保非空
                     }
                     task = *msit;
-                    BPS_LOG(INFO) << "get 1st " << (task->priority * -1);
+                    BPS_LOG(TRACE) << "get 1st " << (task->priority * -1);
                     if (task->priority * -1 <= expected_priority) {
                         // 如果已经是之前区间的东西（因为有可能一下子塞进很多，不一定是边界了）
                         // 那么检查一下队尾
@@ -221,12 +221,12 @@ namespace byteps {
                             msit = std::next(msit, 1);
                         }
                         task = *msit;
-                        BPS_LOG(INFO) << "get end" << (task->priority * -1);
+                        BPS_LOG(TRACE) << "get end" << (task->priority * -1);
                         if (task->priority * -1 <= expected_priority) {
                             // 那么就说明这个区间真的全部传完了，因为是优先级队列，那就不传了
                             immed = 0;
                             _dequeue = 0;
-                            BPS_LOG(INFO) << "stop";
+                            BPS_LOG(TRACE) << "stop";
                             return nullptr;
                         }
                     }
