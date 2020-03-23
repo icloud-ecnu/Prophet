@@ -176,7 +176,7 @@ namespace byteps {
                 _dequeue = 1;
                 immed = 1;
                 // pointer--，然后准备下一个期望的点，下面的 if 里面入栈的内容全部不用做了
-                expected_priority == _grad_checkpoint[--_pointer];
+                expected_priority = _grad_checkpoint[--_pointer];
                 return nullptr;
             }
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
