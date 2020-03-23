@@ -155,21 +155,18 @@ namespace byteps {
             }
         }
 
-        int section(int priority) {
-            for (int i = 0; i < _pointer; i++) {
-                if (priority > _grad_checkpoint[i] && priority <= _grad_checkpoint[i + 1]) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
             msit;
-            int _section = section(expected_priority);
+            int _section;
+            for (int i = 0; i < _pointer; i++) {
+                if (priority > _grad_checkpoint[i] && priority <= _grad_checkpoint[i + 1]) {
+                    _section = expected_priority;
+                    break;
+                }
+            }
             if (can_cover[_section] <= _backward_exec[_section]) {
                 // 如果一共就这么点，网络带宽特别好，能全部传完
                 // 那就不要阻塞了，直接开始传
