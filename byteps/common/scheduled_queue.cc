@@ -213,16 +213,16 @@ namespace byteps {
                         return nullptr; // 确保非空
                     }
                     task = *msit;
-                    BPS_LOG(INFO) << "get 1st " << task->priority;
-                    if (task->priority <= expected_priority) {
+                    BPS_LOG(INFO) << "get 1st " << (task->priority * -1);
+                    if (task->priority * -1 <= expected_priority) {
                         // 如果已经是之前区间的东西（因为有可能一下子塞进很多，不一定是边界了）
                         // 那么检查一下队尾
                         while (std::next(msit, 1) != _ms.end()) {
                             msit = std::next(msit, 1);
                         }
                         task = *msit;
-                        BPS_LOG(INFO) << "get end -- " << task->priority;
-                        if (task->priority <= expected_priority) {
+                        BPS_LOG(INFO) << "get end" << (task->priority * -1);
+                        if (task->priority * -1 <= expected_priority) {
                             // 那么就说明这个区间真的全部传完了，因为是优先级队列，那就不传了
                             immed = 0;
                             _dequeue = 0;
