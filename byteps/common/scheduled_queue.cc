@@ -230,6 +230,20 @@ namespace byteps {
                             return nullptr;
                         }
                     }
+                    if (expected_priority == -1 && _ms.size() == 0) {
+                        _dequeue = 0;
+                        _pointer = 12;
+                        expected_priority = _grad_checkpoint[_pointer];
+                        _stagestart = 1;
+                        _meetzero = 0;
+                        _sizepointer = 0;
+                        _dooropen = _door;
+                        _bps_credit = atoi(getenv("BPS_CREDIT"));
+                        for (int i = 0; i < 160; i++) {
+                            _visited[i] = 0;
+                        }
+                    }
+                    _ms.erase(msit);
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
