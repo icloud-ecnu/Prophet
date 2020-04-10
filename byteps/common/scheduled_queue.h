@@ -43,9 +43,7 @@ namespace byteps {
 
             std::shared_ptr <TensorTableEntry> getTask(uint64_t key);
 
-            std::multiset<std::shared_ptr < TensorTableEntry >> ::
-
-            iterator findTask(int priority);
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator findTask(int priority);
 
             uint32_t pendingSize();
 
@@ -57,7 +55,6 @@ namespace byteps {
                     return (a->priority > b->priority);
                 }
             };
-
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
             std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
@@ -77,10 +74,7 @@ namespace byteps {
             int _door = atoi(getenv("BPS_DOORS"));
             long long _bps_credit = atoi(getenv("BPS_CREDIT"));
             long long _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90,
-                                            74, 58, 15, 0};
-            int can_cover[13] = {1600000, 2080000, 2080000, 4160000, 2880000, 5920000, 9280000, 9440000, 7360000,
-                                 17600000, 32160000, 27840000, 0};
-            int immed = 0;
+                                      74, 58, 15, 0};
             int _exec_stage = 0;
             int _noleftsize = 0;
             int _sizepointer = 0;
