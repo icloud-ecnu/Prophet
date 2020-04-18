@@ -90,6 +90,7 @@ namespace byteps {
         }
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
+          BPS_LOG(INFO) << "addTask";
             std::lock_guard <std::mutex> lock(_mutex);
             if (BytePSGlobal::pre_run) {
               _sq.push_back(entry);
@@ -192,10 +193,12 @@ namespace byteps {
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
+          BPS_LOG(INFO) << "getTask";
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
+              BPS_LOG(INFO) << "Here 1";
               if (!_dequeue) {
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
@@ -219,6 +222,7 @@ namespace byteps {
                 }
                 return nullptr;
               } else {
+                BPS_LOG(INFO) << "Here 2";
                 if (_mystack.size() == 0) {
                   _dequeue = 0;
                   if (_pointer > 0) {
@@ -272,6 +276,7 @@ namespace byteps {
                 return task;
               }
             } else {
+              BPS_LOG(INFO) << "Here 3";
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {
