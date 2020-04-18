@@ -41,7 +41,7 @@ uint32_t BytePSGlobal::_partition_bytes = 4096000;
 
 //added by chris
 int BytePSGlobal::pushsize[20] = {0};
-BPS_LOG(INFO) << "init global";
+
 bool BytePSGlobal::pre_run = true;
 
 int BytePSGlobal::_is_trace = 0;
@@ -139,7 +139,7 @@ void BytePSGlobal::Init() {
   if (_is_distributed_job) {
     BPS_CHECK(getenv("DMLC_NUM_SERVER"))
         << "error: launch distributed job, but env DMLC_NUM_SERVER not set";
-    
+
     // set hash function
     _hash_knob = std::string(getenv("BYTEPS_KEY_HASH_FN") ? getenv("BYTEPS_KEY_HASH_FN") : "djb2");
     BPS_LOG(DEBUG) << "Using key hash function type: " << _hash_knob;
@@ -371,7 +371,7 @@ bool BytePSGlobal::IsTensorDeclared(const std::string& name) {
 void BytePSGlobal::SetProfileFlag(BytePSContext *ctxt) {
   if (_is_trace == 1) {
     // Enable trace, check the start and end step
-    BPS_CHECK(_start_step >= 1 && _end_step > _start_step) 
+    BPS_CHECK(_start_step >= 1 && _end_step > _start_step)
                 << "BYTEPS_TRACE_START_STEP must be larger than 1, "
                 << "BYTEPS_TRACE_END_STEP must be larger than BYTEPS_TRACE_START_STEP.";
     if(ctxt->step_cnt == _start_step-1){
@@ -383,7 +383,7 @@ void BytePSGlobal::SetProfileFlag(BytePSContext *ctxt) {
         std::thread _t(BytePSGlobal::OutputTraces);
         _t.detach();
       }
-    } 
+    }
   } else {
     ctxt->profile_flag = false;
   }
@@ -433,7 +433,7 @@ void BytePSGlobal::OutputTraces(){
   file << "{" << std::endl;
   file << "    \"traceEvents\": [" << std::endl;
   auto first = true;
-  for(std::unordered_map<std::string, int>::iterator iter = _name2end.begin(); 
+  for(std::unordered_map<std::string, int>::iterator iter = _name2end.begin();
     iter != _name2end.end(); iter++){
     BPSContext *ctxt = &_name_to_cxt[iter->first];
     while (ctxt->comm_time.size() > 0) {
@@ -455,7 +455,7 @@ void BytePSGlobal::OutputTraces(){
           BPSCommTime *ret = _part_comm_time_queue.front();
           if (!first) file << ",\n";
           else first = false;
-          BytePSGlobal::EmitTrace(&file, ret, ctxt); 
+          BytePSGlobal::EmitTrace(&file, ret, ctxt);
           _part_comm_time_queue.pop();
         }
         type2part_comm_time.erase(type);
@@ -485,7 +485,7 @@ uint64_t BytePSGlobal::Hash_DJB2(uint64_t key) {
   uint64_t hash = 5381;
   int c;
   while ((c = *str)) { // hash(i) = hash(i-1) * 33 ^ str[i]
-    hash = ((hash << 5) + hash) + c; 
+    hash = ((hash << 5) + hash) + c;
     str++;
   }
   return hash;
@@ -526,7 +526,7 @@ PSKV& BytePSGlobal::EncodeDefaultKey(uint64_t key, size_t len) {
       BPS_CHECK(0) << "Unsupported BYTEPS_KEY_HASH_FN, "
                    << "must be one of [naive, built_in, djb2, sdbm]";
     }
-    
+
     _server_accumulated_len[server] += len;
     BPS_LOG(DEBUG) << "key " << key << " assigned to server " << server
                    << ", accumulated workload for this server is "
