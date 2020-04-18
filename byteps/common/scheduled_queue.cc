@@ -17,7 +17,7 @@
 #include <algorithm>
 #include "global.h"
 #include "logging.h"
-#include <sys\timeb.h>
+#include <sys/timeb.h>
 
 namespace byteps {
     namespace common {
