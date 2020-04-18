@@ -199,85 +199,85 @@ namespace byteps {
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
           BPS_LOG(INFO) << "getTask";
 //          if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
-          if (false && _qt == PUSH && _ms.size() > 0) {
-              BPS_LOG(INFO) << "Here 1";
-              if (!_dequeue) {
-                msit = findTask(expected_priority * -1);
-                if (msit == _ms.end()) {
-                  return nullptr;
-                }
-                if (!_visited[expected_priority]) {
-                  for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                    _mystack.push(expected_priority * -1);
-                    if (expected_priority == 0) {
-                      _meetzero = 1;
-                    }
-                  }
-                  _visited[expected_priority] = 1;
-                }
-                if (expected_priority >= 0) {
-                  expected_priority--;
-                }
-                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-                  _dequeue = 1;
-                  dynamic_size = _backward_exec[_sizepointer++];
-                }
-                return nullptr;
-              } else {
-                BPS_LOG(INFO) << "Here 2";
-                if (_mystack.size() == 0) {
-                  _dequeue = 0;
-                  if (_pointer > 0) {
-                    _pointer--;
-                  }
-                  _stagestart = 1;
-                  BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                  return nullptr;
-                }
-                msit = findTask(_mystack.top());
-                if (msit == _ms.end()) {
-                  return nullptr;
-                }
-                task = *msit;
-                if (!_meetzero) {
-                  if (dynamic_size > task->len) {
-                    dynamic_size -= task->len;
-                    _ms.erase(msit);
-                    _mystack.pop();
-                  } else {
-                    _dequeue = 0;
-                    if (_pointer > 0) {
-                      _pointer--;
-                    }
-                    _stagestart = 1;
-                    BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                    return nullptr;
-                  }
-                } else if (_bps_credit < task->len) {
-                  return nullptr;
-                } else if (_bps_credit > task->len) {
-                  _bps_credit -= task->len;
-                  _ms.erase(msit);
-                  _mystack.pop();
-                }
-                if (_mystack.empty() && _meetzero) {
-                  _dequeue = 0;
-                  _pointer = 12;
-                  expected_priority = _grad_checkpoint[_pointer];
-                  _stagestart = 1;
-                  _meetzero = 0;
-                  _sizepointer = 0;
-                  _dooropen = _door;
-                  _bps_credit = atoi(getenv("BPS_CREDIT"));
-                  for (int i = 0; i < 160; i++) {
-                    _visited[i] = 0;
-                  }
-                }
-                task->ready_event = nullptr;
-                recorderTs(task);
-                return task;
-              }
-            } else {
+//          if (false && _qt == PUSH && _ms.size() > 0) {
+//              BPS_LOG(INFO) << "Here 1";
+//              if (!_dequeue) {
+//                msit = findTask(expected_priority * -1);
+//                if (msit == _ms.end()) {
+//                  return nullptr;
+//                }
+//                if (!_visited[expected_priority]) {
+//                  for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+//                    _mystack.push(expected_priority * -1);
+//                    if (expected_priority == 0) {
+//                      _meetzero = 1;
+//                    }
+//                  }
+//                  _visited[expected_priority] = 1;
+//                }
+//                if (expected_priority >= 0) {
+//                  expected_priority--;
+//                }
+//                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+//                  _dequeue = 1;
+//                  dynamic_size = _backward_exec[_sizepointer++];
+//                }
+//                return nullptr;
+//              } else {
+//                BPS_LOG(INFO) << "Here 2";
+//                if (_mystack.size() == 0) {
+//                  _dequeue = 0;
+//                  if (_pointer > 0) {
+//                    _pointer--;
+//                  }
+//                  _stagestart = 1;
+//                  BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+//                  return nullptr;
+//                }
+//                msit = findTask(_mystack.top());
+//                if (msit == _ms.end()) {
+//                  return nullptr;
+//                }
+//                task = *msit;
+//                if (!_meetzero) {
+//                  if (dynamic_size > task->len) {
+//                    dynamic_size -= task->len;
+//                    _ms.erase(msit);
+//                    _mystack.pop();
+//                  } else {
+//                    _dequeue = 0;
+//                    if (_pointer > 0) {
+//                      _pointer--;
+//                    }
+//                    _stagestart = 1;
+//                    BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+//                    return nullptr;
+//                  }
+//                } else if (_bps_credit < task->len) {
+//                  return nullptr;
+//                } else if (_bps_credit > task->len) {
+//                  _bps_credit -= task->len;
+//                  _ms.erase(msit);
+//                  _mystack.pop();
+//                }
+//                if (_mystack.empty() && _meetzero) {
+//                  _dequeue = 0;
+//                  _pointer = 12;
+//                  expected_priority = _grad_checkpoint[_pointer];
+//                  _stagestart = 1;
+//                  _meetzero = 0;
+//                  _sizepointer = 0;
+//                  _dooropen = _door;
+//                  _bps_credit = atoi(getenv("BPS_CREDIT"));
+//                  for (int i = 0; i < 160; i++) {
+//                    _visited[i] = 0;
+//                  }
+//                }
+//                task->ready_event = nullptr;
+//                recorderTs(task);
+//                return task;
+//              }
+//            } else {
               BPS_LOG(INFO) << "Here 3";
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -309,7 +309,7 @@ namespace byteps {
                     recorderTs(task);
                     return task;
                 }
-            }
+//            }
 
             return nullptr;
         }
