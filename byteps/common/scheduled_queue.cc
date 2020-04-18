@@ -17,8 +17,6 @@
 #include <algorithm>
 #include "global.h"
 #include "logging.h"
-#include <sys/timeb.h>
-
 namespace byteps {
     namespace common {
 
@@ -98,7 +96,10 @@ namespace byteps {
               if ((entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 BPS_LOG(INFO) << "pre_run";
                 int pr = entry->priority * -1;
-                long long tic = getSystemTime();
+                auto now = std::chrono::system_clock::now();
+                auto duration = now.time_since_epoch();
+                auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+                long long tic = (long long)us.count();
                 pre_run_time.push_back(tic);
                 if (_grad_tic[pr] == 0) {
                   BPS_LOG(INFO) << "added " << pr << " at " << tic;
