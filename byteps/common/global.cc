@@ -41,7 +41,7 @@ uint32_t BytePSGlobal::_partition_bytes = 4096000;
 
 //added by chris
 int BytePSGlobal::pushsize[20] = {0};
-
+BPS_LOG(INFO) << "init global";
 bool BytePSGlobal::pre_run = true;
 
 int BytePSGlobal::_is_trace = 0;
