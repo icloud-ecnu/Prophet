@@ -17,6 +17,7 @@
 #include <algorithm>
 #include "global.h"
 #include "logging.h"
+#include <sys\timeb.h>
 
 namespace byteps {
     namespace common {
@@ -92,11 +93,48 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+            if (BytePSGlobal::pre_run) {
+              _sq.push_back(entry);
+              if ((entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                BPS_LOG(INFO) << "pre_run";
+                int pr = entry->priority * -1;
+                long long tic = getSystemTime();
+                pre_run_time.push_back(tic);
+                if (_grad_tic[pr] == 0) {
+                  BPS_LOG(INFO) << "added " << pr << " at " << tic;
+                  _grad_tic[pr] = tic;
+                }
+                if (pr == 0) {
+                  int len = pre_run_time.size();
+                  int sum = 0;
+                  for (int i = 1; i  < len; i++) {
+                    pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
+                    sum += pre_run_time[i - 1];
+                  }
+                  int avg = sum / len;
+                  BPS_LOG(INFO) << "avg = " << sum << " / " << len << " = " << avg;
+                  _grad_checkpoint.push_back(-1);
+                  for (int i = 0; i < 156; i++) {
+                    if (_grad_tic[i] - _grad_tic[i + 1] > avg) {
+                      _grad_checkpoint.push_back(i);
+                    }
+                  }
+                  _grad_checkpoint.push_back(156);
+                  BPS_LOG(INFO) << "_grad_checkpoint";
+                  for (int i = 0; i < _grad_checkpoint.size(); i++) {
+                    BPS_LOG(INFO) << _grad_checkpoint[i] << " ";
+                  }
+                  BPS_LOG(INFO) << "==========================";
+                  BytePSGlobal::pre_run = false;
+                }
+              }
+            } else {
+              if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
-            } else {
+              } else {
                 _sq.push_back(entry);
+              }
             }
             BPS_CHECK(entry->tensor_name != "");
             BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
@@ -156,81 +194,82 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+            if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
+              if (!_dequeue) {
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
-                    return nullptr;
+                  return nullptr;
                 }
                 if (!_visited[expected_priority]) {
-                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
-                        _mystack.push(expected_priority * -1);
-                        if (expected_priority == 0) {
-                            _meetzero = 1;
-                        }
+                  for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                    _mystack.push(expected_priority * -1);
+                    if (expected_priority == 0) {
+                      _meetzero = 1;
                     }
-                    _visited[expected_priority] = 1;
+                  }
+                  _visited[expected_priority] = 1;
                 }
                 if (expected_priority >= 0) {
-                    expected_priority--;
+                  expected_priority--;
                 }
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
-                    _dequeue = 1;
-                    dynamic_size = _backward_exec[_sizepointer++];
+                  _dequeue = 1;
+                  dynamic_size = _backward_exec[_sizepointer++];
                 }
                 return nullptr;
-            }
-            if (_qt == PUSH && _dequeue && _ms.size() > 0) {
+              } else {
                 if (_mystack.size() == 0) {
+                  _dequeue = 0;
+                  if (_pointer > 0) {
+                    _pointer--;
+                  }
+                  _stagestart = 1;
+                  BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+                  return nullptr;
+                }
+                msit = findTask(_mystack.top());
+                if (msit == _ms.end()) {
+                  return nullptr;
+                }
+                task = *msit;
+                if (!_meetzero) {
+                  if (dynamic_size > task->len) {
+                    dynamic_size -= task->len;
+                    _ms.erase(msit);
+                    _mystack.pop();
+                  } else {
                     _dequeue = 0;
                     if (_pointer > 0) {
-                        _pointer--;
+                      _pointer--;
                     }
                     _stagestart = 1;
                     BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
                     return nullptr;
-                }
-                msit = findTask(_mystack.top());
-                if (msit == _ms.end()) {
-                    return nullptr;
-                }
-                task = *msit;
-                if (!_meetzero) {
-                    if (dynamic_size > task->len) {
-                        dynamic_size -= task->len;
-                        _ms.erase(msit);
-                        _mystack.pop();
-                    } else {
-                        _dequeue = 0;
-                        if (_pointer > 0) {
-                            _pointer--;
-                        }
-                        _stagestart = 1;
-                        BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
-                        return nullptr;
-                    }
-                } else if (_bps_credit < task -> len) {
-                    return nullptr;
+                  }
+                } else if (_bps_credit < task->len) {
+                  return nullptr;
                 } else if (_bps_credit > task->len) {
-                    _bps_credit -= task->len;
-                    _ms.erase(msit);
-                    _mystack.pop();
+                  _bps_credit -= task->len;
+                  _ms.erase(msit);
+                  _mystack.pop();
                 }
                 if (_mystack.empty() && _meetzero) {
-                    _dequeue = 0;
-                    _pointer = 12;
-                    expected_priority = _grad_checkpoint[_pointer];
-                    _stagestart = 1;
-                    _meetzero = 0;
-                    _sizepointer = 0;
-                    _dooropen = _door;
-                    _bps_credit = atoi(getenv("BPS_CREDIT"));
-                    for (int i = 0; i < 160; i++) {
-                        _visited[i] = 0;
-                    }
+                  _dequeue = 0;
+                  _pointer = 12;
+                  expected_priority = _grad_checkpoint[_pointer];
+                  _stagestart = 1;
+                  _meetzero = 0;
+                  _sizepointer = 0;
+                  _dooropen = _door;
+                  _bps_credit = atoi(getenv("BPS_CREDIT"));
+                  for (int i = 0; i < 160; i++) {
+                    _visited[i] = 0;
+                  }
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
+              }
             } else {
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
@@ -303,7 +342,7 @@ namespace byteps {
             if (_is_scheduled) {
                 _credits += size;
             }
-            if (_qt == PUSH && size > 0 && _meetzero) {
+            if (!BytePSGlobal::pre_run && _qt == PUSH && size > 0 && _meetzero) {
                 _bps_credit += size;
             }
             return;

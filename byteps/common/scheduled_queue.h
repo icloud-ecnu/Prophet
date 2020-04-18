@@ -58,6 +58,8 @@ namespace byteps {
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
             std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
+            std::vector <long long> pre_run_time;
+            long long _grad_tic[159] = {0};
             std::stack<int> _mystack;
             std::stack<int> _mystackpull;
             std::mutex _mutex;
@@ -69,6 +71,7 @@ namespace byteps {
             int _dooropen = 11;
             int _pulldoor = 0;
             int batchsize = atoi(getenv("Z_BATCH_SIZE"));
+            std::vector <int> _grad_checkpoint;
             int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
             int B = atoi(getenv("BPS_NET_B"));
             int _door = atoi(getenv("BPS_DOORS"));
