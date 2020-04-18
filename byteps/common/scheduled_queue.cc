@@ -91,7 +91,8 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (BytePSGlobal::pre_run) {
+            if (true) {
+//            if (BytePSGlobal::pre_run) {
               _sq.push_back(entry);
               if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 BPS_LOG(INFO) << "pre_run";
@@ -127,7 +128,7 @@ namespace byteps {
                     BPS_LOG(INFO) << _grad_checkpoint[i] << " ";
                   }
                   BPS_LOG(INFO) << "==========================";
-                  BytePSGlobal::pre_run = false;
+//                  BytePSGlobal::pre_run = false;
                 }
               }
             } else {
@@ -197,7 +198,8 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
           BPS_LOG(INFO) << "getTask";
-          if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
+//          if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
+          if (false && _qt == PUSH && _ms.size() > 0) {
               BPS_LOG(INFO) << "Here 1";
               if (!_dequeue) {
                 msit = findTask(expected_priority * -1);
@@ -348,7 +350,8 @@ namespace byteps {
             if (_is_scheduled) {
                 _credits += size;
             }
-            if (!BytePSGlobal::pre_run && _qt == PUSH && size > 0 && _meetzero) {
+//            if (!BytePSGlobal::pre_run && _qt == PUSH && size > 0 && _meetzero) {
+            if (false && _qt == PUSH && size > 0 && _meetzero) {
                 _bps_credit += size;
             }
             return;
