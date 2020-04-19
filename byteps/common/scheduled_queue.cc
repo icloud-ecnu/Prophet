@@ -127,7 +127,6 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         }
         _grad_checkpoint.push_back(total_grad);
         expected_priority = total_grad;
-        BPS_LOG(INFO) << "==========================";
       }
     }
   } else {
@@ -199,6 +198,9 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
+    BPS_LOG(INFO) << "Here 1";
+    BPS_LOG(INFO) << "Expected: " << expected_priority;
+
     if (!_dequeue) {
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
@@ -222,6 +224,10 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       return nullptr;
     } else {
+      BPS_LOG(INFO) << "Here 2";
+      BPS_LOG(INFO) << "_mystack.size(): " << _mystack.size();
+      BPS_LOG(INFO) << "_ms.size(): " << _ms.size();
+
       if (_mystack.size() == 0) {
         _dequeue = 0;
         if (_pointer > 0) {
@@ -259,8 +265,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (_mystack.empty() && _meetzero) {
         _dequeue = 0;
-        _pointer = 12;
-        expected_priority = _grad_checkpoint[_pointer];
+        expected_priority = total_grad;
         _stagestart = 1;
         _meetzero = 0;
         _sizepointer = 0;
@@ -349,9 +354,7 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
     int id = priority * -1;
     finish_count += finish_tag[id] ? 0 : 1;
     finish_tag[id] = true;
-    BPS_LOG(INFO) << "id " << id << ", count " << finish_count;
     if (finish_count == total_grad) {
-      BPS_LOG(INFO) << "finish pre run";
       BytePSGlobal::pre_run = false;
     }
   } else if (_qt == PUSH && size > 0 && _meetzero) {
