@@ -198,7 +198,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
-    BPS_LOG(INFO) << "Here 1";
     BPS_LOG(INFO) << "Expected: " << expected_priority;
 
     if (!_dequeue) {
@@ -224,9 +223,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       return nullptr;
     } else {
-      BPS_LOG(INFO) << "Here 2";
-      BPS_LOG(INFO) << "_mystack.size(): " << _mystack.size();
-      BPS_LOG(INFO) << "_ms.size(): " << _ms.size();
 
       if (_mystack.size() == 0) {
         _dequeue = 0;
@@ -264,6 +260,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         _mystack.pop();
       }
       if (_mystack.empty() && _meetzero) {
+        BPS_LOG(INFO) << "RESET.";
         _dequeue = 0;
         expected_priority = total_grad;
         _stagestart = 1;
