@@ -93,7 +93,6 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
-  BPS_LOG(INFO) <<  "BytePSGlobal::pre_run = " << BytePSGlobal::pre_run;
   if (BytePSGlobal::pre_run) {
     _sq.push_back(entry);
     if (_qt == PUSH &&
@@ -350,7 +349,9 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
     int id = priority * -1;
     finish_count += finish_tag[id] ? 0 : 1;
     finish_tag[id] = true;
+    BPS_LOG(INFO) << "id " << id << ", count " << finish_count;
     if (finish_count == total_grad) {
+      BPS_LOG(INFO) << "finish pre run";
       BytePSGlobal::pre_run = false;
     }
   } else if (_qt == PUSH && size > 0 && _meetzero) {
