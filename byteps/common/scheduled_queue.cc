@@ -118,11 +118,11 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         }
         pre_run_time.clear();
         BPS_LOG(INFO) << "avg = " << avg;
-        BPS_LOG(INFO) << "_grad_tic";
         _grad_checkpoint.push_back(-1);
         for (int i = 0; i < total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
+            BPS_LOG(INFO) << i << " and " << (i + 1) << " " << diff << " pushed";
             _grad_checkpoint.push_back(i);
           }
         }
