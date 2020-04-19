@@ -97,12 +97,8 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
     _sq.push_back(entry);
     if (_qt == PUSH &&
         (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
-      BPS_LOG(INFO) << "pre_run";
       int pr = entry->priority * -1;
-      if (total_grad == -1) {
-        total_grad = pr;
-        BPS_LOG(INFO) << "total grad " << total_grad;
-      }
+      total_grad = std::max(total_grad, pr);
       auto now = std::chrono::system_clock::now();
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
@@ -110,9 +106,10 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       pre_run_time.push_back(tic);
       if (_grad_tic[pr] == 0) {
         BPS_LOG(INFO) << "added " << pr << " at " << tic;
+        processed_grad_count++;
         _grad_tic[pr] = tic;
       }
-      if (pr == 0) {
+      if (processed_grad_count == total_grad) {
         int len = pre_run_time.size();
         int sum = 0;
         for (int i = 1; i < len; i++) {
@@ -122,9 +119,14 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         pre_run_time.clear();
         int avg = sum / len;
         BPS_LOG(INFO) << "avg = " << sum << " / " << len << " = " << avg;
+        BPS_LOG(INFO) << "_grad_tic";
+        for (int i = 0; i <= total_grad; i++) {
+         BPS_LOG(INFO) << _grad_tic[i] + " ";
+        }
         _grad_checkpoint.push_back(-1);
         for (int i = 0; i < total_grad; i++) {
-          if (_grad_tic[i] - _grad_tic[i + 1] > avg) {
+          int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
+          if ( diff > avg ) {
             _grad_checkpoint.push_back(i);
           }
         }
@@ -133,8 +135,9 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         for (int i = 0; i < _grad_checkpoint.size(); i++) {
           BPS_LOG(INFO) << _grad_checkpoint[i] << " ";
         }
-        BPS_LOG(INFO) << "==========================";
         expected_priority = total_grad;
+        BPS_LOG(INFO) << "expected: " << expected_priority;
+        BPS_LOG(INFO) << "==========================";
         BytePSGlobal::pre_run = false;
       }
     }
