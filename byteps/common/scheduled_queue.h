@@ -71,8 +71,8 @@ namespace byteps {
             int _dooropen = 11;
             int _pulldoor = 0;
             int batchsize = atoi(getenv("Z_BATCH_SIZE"));
-//            std::vector <int> _grad_checkpoint;
-            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
+            std::vector <int> _grad_checkpoint;
+//            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
             int B = atoi(getenv("BPS_NET_B"));
             int _door = atoi(getenv("BPS_DOORS"));
             long long _bps_credit = atoi(getenv("BPS_CREDIT"));
@@ -88,7 +88,8 @@ namespace byteps {
             long long dynamic_size = 0;
             int _pushsize = 0;
             int _pullsize = 0;
-            int expected_priority = _grad_checkpoint[_pointer];
+            int expected_priority = -1;
+            int total_grad = -1;
             QueueType _qt;
             ReadyTable *_rt;
         };

@@ -90,20 +90,66 @@ namespace byteps {
             }
         }
 
-        void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
-            std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
-                _ms.insert(entry);
-                _tensor_part[entry->priority * -1] = entry->total_partnum;
-            } else {
-                _sq.push_back(entry);
-            }
-            BPS_CHECK(entry->tensor_name != "");
-            BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
-                           << " addTask: " << entry->tensor_name << " key: " << entry->key
-                           << " rank: " << BytePSGlobal::GetLocalRank();
-            return;
+    void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
+      std::lock_guard <std::mutex> lock(_mutex);
+            if (BytePSGlobal::pre_run) {
+              _sq.push_back(entry);
+              if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                BPS_LOG(INFO) << "pre_run";
+                int pr = entry->priority * -1;
+                if (total_grad == -1) {
+                  total_grad = pr;
+                  BPS_LOG(INFO) << "total grad " << total_grad;
+                }
+                auto now = std::chrono::system_clock::now();
+                auto duration = now.time_since_epoch();
+                auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+                long long tic = (long long)us.count();
+                pre_run_time.push_back(tic);
+                if (_grad_tic[pr] == 0) {
+                  BPS_LOG(INFO) << "added " << pr << " at " << tic;
+                  _grad_tic[pr] = tic;
+                }
+                if (pr == 0) {
+                  int len = pre_run_time.size();
+                  int sum = 0;
+                  for (int i = 1; i  < len; i++) {
+                    pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
+                    sum += pre_run_time[i - 1];
+                  }
+                  pre_run_time.clear();
+                  int avg = sum / len;
+                  BPS_LOG(INFO) << "avg = " << sum << " / " << len << " = " << avg;
+                  _grad_checkpoint.push_back(-1);
+                  for (int i = 0; i < total_grad; i++) {
+                    if (_grad_tic[i] - _grad_tic[i + 1] > avg) {
+                      _grad_checkpoint.push_back(i);
+                    }
+                  }
+                  _grad_checkpoint.push_back(total_grad);
+                  BPS_LOG(INFO) << "_grad_checkpoint";
+                  for (int i = 0; i < _grad_checkpoint.size(); i++) {
+                    BPS_LOG(INFO) << _grad_checkpoint[i] << " ";
+                  }
+                  BPS_LOG(INFO) << "==========================";
+                  expected_priority = total_grad;
+                  BytePSGlobal::pre_run = false;
+                }
+              }
+      } else {
+        if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+          _ms.insert(entry);
+          _tensor_part[entry->priority * -1] = entry->total_partnum;
+        } else {
+          _sq.push_back(entry);
         }
+      }
+      BPS_CHECK(entry->tensor_name != "");
+      BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
+                     << " addTask: " << entry->tensor_name << " key: " << entry->key
+                     << " rank: " << BytePSGlobal::GetLocalRank();
+      return;
+    }
 
         void BytePSScheduledQueue::recorderTs(std::shared_ptr <TensorTableEntry> task) {
             auto context = task->context;
