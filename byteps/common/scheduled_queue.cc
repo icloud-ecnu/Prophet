@@ -93,6 +93,7 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
+  BPS_LOG(INFO) <<  "BytePSGlobal::pre_run = " << BytePSGlobal::pre_run;
   if (BytePSGlobal::pre_run) {
     _sq.push_back(entry);
     if (_qt == PUSH &&
@@ -118,24 +119,16 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         }
         avg *= 20;
         pre_run_time.clear();
-        BPS_LOG(INFO) << "avg = " << avg;
         _grad_checkpoint.push_back(-1);
         for (int i = 0; i < total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
-            BPS_LOG(INFO) << i << " and " << (i + 1) << " " << diff << " pushed";
             _grad_checkpoint.push_back(i);
           }
         }
         _grad_checkpoint.push_back(total_grad);
-        BPS_LOG(INFO) << "_grad_checkpoint";
-        for (int i = 0; i < _grad_checkpoint.size(); i++) {
-          BPS_LOG(INFO) << _grad_checkpoint[i] << " ";
-        }
         expected_priority = total_grad;
-        BPS_LOG(INFO) << "expected: " << expected_priority;
         BPS_LOG(INFO) << "==========================";
-        BytePSGlobal::pre_run = false;
       }
     }
   } else {
@@ -348,12 +341,19 @@ uint32_t BytePSScheduledQueue::pendingSize() {
   return _sq.size();
 }
 
-void BytePSScheduledQueue::reportFinish(int size) {
+void BytePSScheduledQueue::reportFinish(int size, int priority) {
   std::lock_guard<std::mutex> lock(_mutex);
   if (_is_scheduled) {
     _credits += size;
   }
-  if (!BytePSGlobal::pre_run && _qt == PUSH && size > 0 && _meetzero) {
+  if (BytePSGlobal::pre_run) {
+    int id = priority * -1;
+    finish_count += finish_tag[id] ? 0 : 1;
+    finish_tag[id] = true;
+    if (finish_count == total_grad) {
+      BytePSGlobal::pre_run = false;
+    }
+  } else if (_qt == PUSH && size > 0 && _meetzero) {
     _bps_credit += size;
   }
   return;
