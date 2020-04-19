@@ -48,8 +48,8 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
   _qt = type;
   _credits = _is_scheduled
-                 ? BytePSGlobal::GetPartitionBound() * credit_in_partition
-                 : 34359738368;  // 32GB, basically disabling credit control
+             ? BytePSGlobal::GetPartitionBound() * credit_in_partition
+             : 34359738368;  // 32GB, basically disabling credit control
   _rt = nullptr;
 
   switch (_qt) {
@@ -105,24 +105,20 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       long long tic = (long long)us.count();
       pre_run_time.push_back(tic);
       if (_grad_tic[pr] == 0) {
-        BPS_LOG(INFO) << "added " << pr << " at " << tic;
         processed_grad_count++;
         _grad_tic[pr] = tic;
       }
       if (processed_grad_count == total_grad) {
-        BPS_LOG(INFO) << "total " << total_grad;
         int len = pre_run_time.size();
         double avg = 0;
         for (int i = 1; i < len; i++) {
           pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
+          BPS_LOG(INFO) << pre_run_time[i - 1];
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * pre_run_time[i - 1];
         }
         pre_run_time.clear();
         BPS_LOG(INFO) << "avg = " << avg;
         BPS_LOG(INFO) << "_grad_tic";
-        for (int i = 0; i <= total_grad; i++) {
-         BPS_LOG(INFO) << _grad_tic[i] + " ";
-        }
         _grad_checkpoint.push_back(-1);
         for (int i = 0; i < total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
@@ -194,7 +190,7 @@ BytePSScheduledQueue::findTask(int priority) {
   std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
   e->priority = priority;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator it =
-      _ms.lower_bound(e);
+                                                                 _ms.lower_bound(e);
   if (it == _ms.end()) {
     return it;
   } else if ((*it)->priority != priority) {
