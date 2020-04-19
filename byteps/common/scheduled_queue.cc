@@ -110,11 +110,12 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         _grad_tic[pr] = tic;
       }
       if (processed_grad_count == total_grad) {
+        BPS_LOG(INFO) << "total " << total_grad;
         int len = pre_run_time.size();
-        int sum = 0;
+        double avg = 0;
         for (int i = 1; i < len; i++) {
           pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
-          sum += pre_run_time[i - 1];
+          avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * pre_run_time[i - 1];
         }
         pre_run_time.clear();
         int avg = sum / len;
