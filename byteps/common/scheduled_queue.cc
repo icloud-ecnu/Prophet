@@ -25,12 +25,10 @@ namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
   B *= 125;
-  for (int i = 0; i < 13; i++) {
-    _backward_exec[i] *= (int)((double)batchsize / 64);
-  }
-  for (int i = 0; i < 13; i++) {
-    _backward_exec[i] *= B;
-  }
+  B *= (int)((double)batchsize / 64);
+//  for (int i = 0; i < 13; i++) {
+//    _backward_exec[i] *= B;
+//  }
 
   _pointer = _grad_checkpoint.size() - 1;
 
@@ -125,6 +123,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
             _grad_checkpoint.push_back(i);
+            _backward_exec.insert(_backward_exec.begin(), diff);
           }
         }
         _grad_checkpoint.push_back(total_grad);
@@ -221,7 +220,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (expected_priority == _grad_checkpoint[_pointer - 1]) {
         _dequeue = 1;
-        dynamic_size = _backward_exec[_sizepointer++];
+        dynamic_size = _backward_exec[_sizepointer++] * B;
       }
       return nullptr;
     } else {

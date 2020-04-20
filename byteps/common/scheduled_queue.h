@@ -77,8 +77,8 @@ namespace byteps {
             int B = atoi(getenv("BPS_NET_B"));
             int _door = atoi(getenv("BPS_DOORS"));
             long long _bps_credit = atoi(getenv("BPS_CREDIT"));
-            long long _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90,
-                                      74, 58, 15, 0};
+            std::vector<int> _backward_exec;
+//            long long _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90, 74, 58, 15, 0};
             int _exec_stage = 0;
             int _noleftsize = 0;
             int _sizepointer = 0;
