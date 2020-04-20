@@ -28,20 +28,6 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
   B *= (int)((double)batchsize / 64);
   B /= 1000;
 
-  if (BytePSGlobal::pre_run) {
-    BPS_LOG(INFO) << "pre_run";
-  } else {
-    expected_priority = BytePSGlobal::total_grad;
-    _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-    BPS_LOG(INFO) << "=====================_backward_exec=====================";
-    for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
-      BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
-    }
-    BPS_LOG(INFO) << "=====================_backward_exec=====================";
-    for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
-      BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
-    }
-  }
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
   } else {
@@ -103,6 +89,22 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
+  if (!pre_run_result_sync) {
+    if (BytePSGlobal::pre_run) {
+    } else {
+      expected_priority = BytePSGlobal::total_grad;
+      _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
+      pre_run_result_sync = true;
+      BPS_LOG(INFO) << "=====================_backward_exec=====================";
+      for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
+        BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
+      }
+      BPS_LOG(INFO) << "=====================_backward_exec=====================";
+      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
+        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
+      }
+    }
+  }
   if (BytePSGlobal::pre_run) {
     _sq.push_back(entry);
     if (_qt == PUSH &&
@@ -210,7 +212,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
-      BPS_LOG(INFO) << "enque";
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
         return nullptr;

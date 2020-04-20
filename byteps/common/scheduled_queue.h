@@ -90,6 +90,7 @@ namespace byteps {
             int expected_priority = -1;
             int processed_grad_count = 0;
             int finish_count = 0;
+            bool pre_run_result_sync = false;
             QueueType _qt;
             ReadyTable *_rt;
         };
