@@ -32,6 +32,8 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
     _backward_exec[i] *= B;
   }
 
+  _pointer = _grad_checkpoint.size() - 1;
+
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
   } else {
@@ -261,6 +263,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (_mystack.empty() && _meetzero) {
         BPS_LOG(INFO) << "RESET.";
+        _pointer = _grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = total_grad;
         _stagestart = 1;

@@ -84,7 +84,7 @@ namespace byteps {
             int _sizepointer = 0;
             int _stagepullnum = 0;
             int _dequeue = 0;
-            int _pointer = 12;
+            int _pointer = -1;
             int _stagestart = 1;
             long long dynamic_size = 0;
             int _pushsize = 0;
