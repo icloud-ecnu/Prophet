@@ -113,7 +113,6 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         double avg = 0;
         for (int i = 1; i < len; i++) {
           pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
-          BPS_LOG(INFO) << pre_run_time[i - 1];
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * pre_run_time[i - 1];
         }
         avg *= 20;
@@ -128,6 +127,9 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         }
         _grad_checkpoint.push_back(total_grad);
         expected_priority = total_grad;
+        for (int i = 0; i < _backward_exec.size(); i++) {
+          BPS_LOG(INFO) << _backward_exec[i];
+        }
       }
     }
   } else {
@@ -199,8 +201,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
-    BPS_LOG(INFO) << "Expected: " << expected_priority;
-    BPS_LOG(INFO) << "_dequeue: " << _dequeue;
     if (!_dequeue) {
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
@@ -219,12 +219,12 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         expected_priority--;
       }
       if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+        BPS_LOG(INFO) << "Expected: " << expected_priority << ", now deque.";
         _dequeue = 1;
         dynamic_size = _backward_exec[_sizepointer++] * B;
       }
       return nullptr;
     } else {
-
       if (_mystack.size() == 0) {
         _dequeue = 0;
         if (_pointer > 0) {
@@ -245,6 +245,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           _ms.erase(msit);
           _mystack.pop();
         } else {
+          BPS_LOG(INFO) << "Not meet zero, no size";
           _dequeue = 0;
           if (_pointer > 0) {
             _pointer--;
@@ -254,8 +255,10 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           return nullptr;
         }
       } else if (_bps_credit < task->len) {
+        BPS_LOG(INFO) << "no size"
         return nullptr;
       } else if (_bps_credit > task->len) {
+        BPS_LOG(INFO) << "meet zero, go"
         _bps_credit -= task->len;
         _ms.erase(msit);
         _mystack.pop();
