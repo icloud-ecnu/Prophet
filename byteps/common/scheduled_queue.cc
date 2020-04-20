@@ -125,6 +125,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         processed_grad_count++;
         _grad_tic[pr] = tic;
       }
+      BPS_LOG(INFO) << processed_grad_count << " == "  << BytePSGlobal::total_grad << " ?";
       if (processed_grad_count == BytePSGlobal::total_grad) {
         BPS_LOG(INFO) << "pre run all grads.";
         int len = pre_run_time.size();
@@ -366,10 +367,11 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
   if (_is_scheduled) {
     _credits += size;
   }
-  if (BytePSGlobal::pre_run) {
+  if (BytePSGlobal::pre_run && _qt == PUSH) {
     int id = priority * -1;
     finish_count += finish_tag[id] ? 0 : 1;
     finish_tag[id] = true;
+    BPS_LOG(INFO) << "finish_count = " << finish_count;
     if (finish_count == BytePSGlobal::total_grad) {
       BytePSGlobal::pre_run = false;
       BPS_LOG(INFO) << "Pre_run done!";
