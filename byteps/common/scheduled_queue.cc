@@ -26,9 +26,7 @@ namespace common {
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
   B *= 125;
   B *= (int)((double)batchsize / 64);
-//  for (int i = 0; i < 13; i++) {
-//    _backward_exec[i] *= B;
-//  }
+  B /= 1000;
 
   _pointer = _grad_checkpoint.size() - 1;
 
@@ -202,6 +200,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
+      BPS_LOG(INFO) << "Expected " << expected_priority;
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
         return nullptr;
