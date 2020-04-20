@@ -28,8 +28,20 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
   B *= (int)((double)batchsize / 64);
   B /= 1000;
 
-  _pointer = _grad_checkpoint.size() - 1;
-
+  if (BytePSGlobal::pre_run) {
+    BPS_LOG(INFO) << "pre_run";
+  } else {
+    expected_priority = BytePSGlobal::total_grad;
+    _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
+    BPS_LOG(INFO) << "=====================_backward_exec=====================";
+    for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
+      BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
+    }
+    BPS_LOG(INFO) << "=====================_backward_exec=====================";
+    for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
+      BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
+    }
+  }
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
   } else {
@@ -115,19 +127,16 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         }
         avg *= 20;
         pre_run_time.clear();
-        _grad_checkpoint.push_back(-1);
+        BytePSGlobal::_grad_checkpoint.push_back(-1);
         for (int i = 0; i < total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
-            _grad_checkpoint.push_back(i);
-            _backward_exec.insert(_backward_exec.begin(), diff);
+            BytePSGlobal::_grad_checkpoint.push_back(i);
+            BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
           }
         }
-        _grad_checkpoint.push_back(total_grad);
-        expected_priority = total_grad;
-        for (int i = 0; i < _backward_exec.size(); i++) {
-          BPS_LOG(INFO) << _backward_exec[i];
-        }
+        BytePSGlobal::_grad_checkpoint.push_back(total_grad);
+
       }
     }
   } else {
@@ -216,10 +225,10 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       if (expected_priority >= 0) {
         expected_priority--;
       }
-      if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+      if (expected_priority == BytePSGlobal::_grad_checkpoint[_pointer - 1]) {
         BPS_LOG(INFO) << "Expected: " << expected_priority << ", now deque.";
         _dequeue = 1;
-        dynamic_size = _backward_exec[_sizepointer++] * B;
+        dynamic_size = BytePSGlobal::_backward_exec[_sizepointer++] * B;
       }
       return nullptr;
     } else {
@@ -263,7 +272,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (_mystack.empty() && _meetzero) {
         BPS_LOG(INFO) << "RESET.";
-        _pointer = _grad_checkpoint.size() - 1;
+        _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = total_grad;
         _stagestart = 1;

@@ -111,7 +111,12 @@ class BytePSGlobal {
   static ReadyTable* GetCopyTable() { return _copy_table; }
   
   static int pushsize[20] ;
+
   static bool pre_run;
+  static std::vector <int> _grad_checkpoint;
+  static std::vector<int> _backward_exec;
+  static int total_grad;
+
   static std::shared_ptr<NcclManager> GetNccl() { return _nccl_manager; }
   static std::shared_ptr<CpuReducer> GetCpuReducer() { return _cpu_reducer; }
 
