@@ -108,7 +108,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
     if (_qt == PUSH &&
         (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
       int pr = entry->priority * -1;
-      total_grad = std::max(total_grad, pr);
+      BytePSGlobal::total_grad = std::max(BytePSGlobal::total_grad, pr);
       auto now = std::chrono::system_clock::now();
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
@@ -118,7 +118,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         processed_grad_count++;
         _grad_tic[pr] = tic;
       }
-      if (processed_grad_count == total_grad) {
+      if (processed_grad_count == BytePSGlobal::total_grad) {
         int len = pre_run_time.size();
         double avg = 0;
         for (int i = 1; i < len; i++) {
@@ -128,14 +128,14 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         avg *= 20;
         pre_run_time.clear();
         BytePSGlobal::_grad_checkpoint.push_back(-1);
-        for (int i = 0; i < total_grad; i++) {
+        for (int i = 0; i < BytePSGlobal::total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
             BytePSGlobal::_grad_checkpoint.push_back(i);
             BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
           }
         }
-        BytePSGlobal::_grad_checkpoint.push_back(total_grad);
+        BytePSGlobal::_grad_checkpoint.push_back(BytePSGlobal::total_grad);
 
       }
     }
@@ -274,7 +274,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         BPS_LOG(INFO) << "RESET.";
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
-        expected_priority = total_grad;
+        expected_priority = BytePSGlobal::total_grad;
         _stagestart = 1;
         _meetzero = 0;
         _sizepointer = 0;
@@ -363,7 +363,7 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
     int id = priority * -1;
     finish_count += finish_tag[id] ? 0 : 1;
     finish_tag[id] = true;
-    if (finish_count == total_grad) {
+    if (finish_count == BytePSGlobal::total_grad) {
       BytePSGlobal::pre_run = false;
     }
   } else if (_qt == PUSH && size > 0 && _meetzero) {
