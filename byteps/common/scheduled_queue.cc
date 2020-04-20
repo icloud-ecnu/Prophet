@@ -235,6 +235,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       if (expected_priority == BytePSGlobal::_grad_checkpoint[_pointer - 1]) {
         BPS_LOG(INFO) << "Expected: " << expected_priority << ", now deque.";
         _dequeue = 1;
+        BPS_LOG(INFO) << "_sizepointer" << _sizepointer;
+        BPS_LOG(INFO) << "BytePSGlobal::_backward_exec[_sizepointer]" << BytePSGlobal::_backward_exec[_sizepointer];
         dynamic_size = BytePSGlobal::_backward_exec[_sizepointer++] * B;
       }
       return nullptr;
@@ -259,7 +261,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           _ms.erase(msit);
           _mystack.pop();
         } else {
-          BPS_LOG(INFO) << "Not meet zero, no size";
           _dequeue = 0;
           if (_pointer > 0) {
             _pointer--;
@@ -269,10 +270,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           return nullptr;
         }
       } else if (_bps_credit < task->len) {
-        BPS_LOG(INFO) << "no size";
         return nullptr;
       } else if (_bps_credit > task->len) {
-        BPS_LOG(INFO) << "meet zero, go";
         _bps_credit -= task->len;
         _ms.erase(msit);
         _mystack.pop();
