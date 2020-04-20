@@ -104,7 +104,7 @@ void BytePSGlobal::CreateScheduledQueue(QueueType queueType) {
 
 void BytePSGlobal::Init() {
   std::lock_guard<std::mutex> lock(_init_mutex);
-
+  BPS_LOG(INFO) << "Init.......";
   // We only init once
   if (_initialized) {
     return;
