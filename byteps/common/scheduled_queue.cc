@@ -90,16 +90,18 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
   if (!pre_run_result_sync) {
-    if (BytePSGlobal::pre_run) {
-    } else {
+    if (!BytePSGlobal::pre_run && _qt == PUSH) {
+      pre_run_result_sync = true;
+      BPS_LOG(INFO) << "expected_priority " << expected_priority;
+      BPS_LOG(INFO) << "_pointer " << _pointer;
       expected_priority = BytePSGlobal::total_grad;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-      pre_run_result_sync = true;
+
       BPS_LOG(INFO) << "=====================_backward_exec=====================";
       for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
         BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
       }
-      BPS_LOG(INFO) << "=====================_backward_exec=====================";
+      BPS_LOG(INFO) << "=====================_grad_checkpoint=====================";
       for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
         BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
       }
@@ -110,7 +112,10 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
     if (_qt == PUSH &&
         (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
       int pr = entry->priority * -1;
-      BytePSGlobal::total_grad = std::max(BytePSGlobal::total_grad, pr);
+      if (pr > BytePSGlobal::total_grad) {
+        BytePSGlobal::total_grad = pr;
+        BPS_LOG(INFO) << "BytePSGlobal::total_grad " << BytePSGlobal::total_grad;
+      }
       auto now = std::chrono::system_clock::now();
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
@@ -146,7 +151,6 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
       _ms.insert(entry);
       _tensor_part[entry->priority * -1] = entry->total_partnum;
-      BPS_LOG(INFO) << "_ms,,,";
     } else {
       _sq.push_back(entry);
     }
