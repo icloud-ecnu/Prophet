@@ -25,7 +25,6 @@ namespace byteps {
 namespace common {
 
 void FinishOrProceed(std::shared_ptr<TensorTableEntry> task) {
-  BPS_LOG(INFO) << "Core loop";
   auto &queue_list = task->queue_list;
   BPS_CHECK_GE(queue_list.size(), 1);
   auto this_op = queue_list[0];
