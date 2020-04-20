@@ -200,7 +200,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
-      BPS_LOG(INFO) << "Expected " << expected_priority;
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
         return nullptr;
