@@ -104,10 +104,13 @@ void BytePSGlobal::CreateScheduledQueue(QueueType queueType) {
 
 void BytePSGlobal::Init() {
   std::lock_guard<std::mutex> lock(_init_mutex);
+
   // We only init once
   if (_initialized) {
     return;
   }
+
+  BPS_LOG(INFO) << "Init()";
 
   // Set the profiling-related variables
   _is_trace = getenv("BYTEPS_TRACE_ON") ? atoi(getenv("BYTEPS_TRACE_ON")) : _is_trace;

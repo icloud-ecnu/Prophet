@@ -24,6 +24,7 @@ namespace byteps {
 namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
+  BPS_LOG(INFO) << "Queue";
   B *= 125;
   B *= (int)((double)batchsize / 64);
   B /= 1000;
