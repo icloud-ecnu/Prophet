@@ -30,7 +30,6 @@ void FinishOrProceed(std::shared_ptr<TensorTableEntry> task) {
   auto this_op = queue_list[0];
   auto q = BytePSGlobal::GetScheduledQueue(this_op);
   q->reportFinish(task->len, task->priority);
-  BPS_LOG(INFO) << "core loop";
   if (BytePSGlobal::IsTensorSampled(task->key)) {
     // We only support sampling
     BPS_CHECK(task->tensor->dtype() == common::BYTEPS_FLOAT32);

@@ -260,6 +260,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           _ms.erase(msit);
           _mystack.pop();
         } else {
+          BPS_LOG(INFO) << "No size";
           _dequeue = 0;
           if (_pointer > 0) {
             _pointer--;
@@ -269,6 +270,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
           return nullptr;
         }
       } else if (_bps_credit < task->len) {
+        BPS_LOG(INFO) << "_bps_credit < task->len";
         return nullptr;
       } else if (_bps_credit > task->len) {
         _bps_credit -= task->len;
