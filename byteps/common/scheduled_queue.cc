@@ -89,7 +89,7 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
-  BPS_LOG(INFO) << "addTask";
+//  BPS_LOG(INFO) << "addTask";
   if (!pre_run_result_sync) {
     if (!BytePSGlobal::pre_run && _qt == PUSH) {
       pre_run_result_sync = true;
@@ -111,6 +111,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   if (BytePSGlobal::pre_run) {
     _sq.push_back(entry);
     if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) != (entry->tensor_name).npos) {
+      BPS_LOG(INFO) << (entry->tensor_name);
       int pr = entry->priority * -1;
       if (pr > BytePSGlobal::total_grad) {
         BytePSGlobal::total_grad = pr;
