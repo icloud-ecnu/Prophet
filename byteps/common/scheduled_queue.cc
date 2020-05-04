@@ -98,15 +98,15 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       pre_run_result_sync = true;
       expected_priority = BytePSGlobal::total_grad - 1;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-      BPS_LOG(INFO)
-          << "=====================_backward_exec=====================";
-      for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
-        BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
-      }
-      BPS_LOG(INFO)
-          << "=====================_grad_checkpoint=====================";
-      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
-        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
+//      BPS_LOG(INFO)
+//          << "=====================_backward_exec=====================";
+//      for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
+//        BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
+//      }
+//      BPS_LOG(INFO)
+//          << "=====================_grad_checkpoint=====================";
+//      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
+//        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
       }
     }
   }
@@ -221,6 +221,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
+      BPS_LOG(INFO) << "here 1";
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
         return nullptr;
@@ -243,6 +244,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       return nullptr;
     } else {
+      BPS_LOG(INFO) << "here 2";
       if (_mystack.size() == 0) {
         _dequeue = 0;
         if (_pointer > 0) {
@@ -279,6 +281,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         _mystack.pop();
       }
       if (_mystack.empty() && _meetzero) {
+        BPS_LOG(INFO) << "RESET";
+
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = BytePSGlobal::total_grad - 1;
@@ -287,7 +291,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         _sizepointer = 0;
         _dooropen = _door;
         _bps_credit = atoi(getenv("BPS_CREDIT"));
-        for (int i = 0; i < 160; i++) {
+        for (int i = 0; i < 1600; i++) {
           _visited[i] = 0;
         }
       }
@@ -296,6 +300,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       return task;
     }
   } else {
+    BPS_LOG(INFO) << "here 3";
     for (auto it = _sq.begin(); it != _sq.end(); ++it) {
       if ((*it)->ready_event) {
         if (!(*it)->ready_event->Ready()) {
@@ -386,8 +391,8 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       long long tac = (long long)us.count();
       double t = (double)(tac - _push_start_tic[id]);
       double possible_B = (double)size * 1000.0 / t;
-      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B
-                    << " Bytes/ms.";
+//      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B
+//                    << " Bytes/ms.";
       // TODO if > 20%, set new Global B
     }
     finish_tag[id] = true;
