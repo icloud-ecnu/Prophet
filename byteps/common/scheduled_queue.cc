@@ -244,7 +244,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       return nullptr;
     } else {
-      BPS_LOG(INFO) << "here 2";
       if (_mystack.size() == 0) {
         _dequeue = 0;
         if (_pointer > 0) {
@@ -383,8 +382,8 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
   }
   if (BytePSGlobal::pre_run && _qt == PUSH) {
     int id = priority * -1;
-    finish_count += finish_tag[id] ? 0 : 1;
     if (!finish_tag[id]) {
+      finish_count += 1;
       auto now = std::chrono::system_clock::now();
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
