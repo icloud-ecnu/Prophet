@@ -154,7 +154,6 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   } else {
     if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) !=
                            (entry->tensor_name).npos) {
-      BPS_LOG(INFO) << "ms.insert()";
       _ms.insert(entry);
       _tensor_part[entry->priority * -1] = entry->total_partnum;
     } else {
