@@ -123,29 +123,27 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       }
       if (processed_grad_count == BytePSGlobal::total_grad) {
         double avg = 0;
-        for (int i = 1; i <= processed_grad_count; i++) {
-          BPS_LOG(INFO) << "fabs(" << _grad_tic[i] << " - " << _grad_tic[i - 1] << ") = " << fabs(_grad_tic[i] - _grad_tic[i - 1]);
+        for (int i = 1; i < processed_grad_count; i++) {
           double x = fabs(_grad_tic[i] - _grad_tic[i - 1]);
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * x;
         }
-        avg *= 20;
         BPS_LOG(INFO) << "avg = " << avg;
         BytePSGlobal::_grad_checkpoint.push_back(-1);
-        for (int i = 0; i < BytePSGlobal::total_grad; i++) {
-          double diff = fabs(_grad_tic[i] - _grad_tic[i + 1]);
+        for (int i = 1; i < BytePSGlobal::total_grad; i++) {
+          double diff = fabs(_grad_tic[i] - _grad_tic[i - 1]);
           if ( diff > avg ) {
             diff /= 1000; // microsecond to millisecond
-            BPS_LOG(INFO) << "gap between " << i << " and " << (i + 1) << ": " << diff;
+            BPS_LOG(INFO) << "gap between " << i << " and " << (i - 1) << ": " << diff;
             if (BytePSGlobal::_backward_exec.size() == 0) {
-              int _diff = abs(_grad_tic[i] - _grad_tic[0]);
+              double _diff = fabs(_grad_tic[i - 1] - _grad_tic[0]);
               _diff /= 1000;
               BytePSGlobal::_backward_exec.push_back(_diff);
             }
-            BytePSGlobal::_grad_checkpoint.push_back(i);
+            BytePSGlobal::_grad_checkpoint.push_back(i - 1);
             BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
           }
         }
-        BytePSGlobal::_grad_checkpoint.push_back(BytePSGlobal::total_grad);
+        BytePSGlobal::_grad_checkpoint.push_back(BytePSGlobal::total_grad - 1);
       }
     }
   } else {
