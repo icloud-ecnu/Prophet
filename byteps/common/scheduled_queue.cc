@@ -220,12 +220,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::lock_guard<std::mutex> lock(_mutex);
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
-  if (!BytePSGlobal::pre_run && _qt == PUSH) {
-    BPS_LOG(INFO) << "_ms.size() = " << _ms.size();
-  }
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
-      BPS_LOG(INFO) << "here 1";
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
         return nullptr;
