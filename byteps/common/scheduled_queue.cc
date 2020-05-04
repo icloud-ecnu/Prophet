@@ -96,7 +96,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   if (!pre_run_result_sync) {
     if (!BytePSGlobal::pre_run && _qt == PUSH) {
       pre_run_result_sync = true;
-      expected_priority = BytePSGlobal::total_grad;
+      expected_priority = BytePSGlobal::total_grad - 1;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
       BPS_LOG(INFO)
           << "=====================_backward_exec=====================";
