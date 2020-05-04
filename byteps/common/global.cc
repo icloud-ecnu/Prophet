@@ -46,6 +46,7 @@ bool BytePSGlobal::pre_run = true;
 int BytePSGlobal::total_grad = -1;
 std::vector <int> BytePSGlobal::_grad_checkpoint;
 std::vector <double> BytePSGlobal::_backward_exec;
+long long B = 1000;
 
 
 int BytePSGlobal::_is_trace = 0;

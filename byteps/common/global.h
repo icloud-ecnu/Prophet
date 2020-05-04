@@ -115,6 +115,7 @@ class BytePSGlobal {
   static bool pre_run;
   static std::vector <int> _grad_checkpoint;
   static std::vector<double> _backward_exec;
+  static long long B;
   static int total_grad;
 
   static std::shared_ptr<NcclManager> GetNccl() { return _nccl_manager; }
