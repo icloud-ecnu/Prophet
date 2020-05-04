@@ -61,6 +61,7 @@ namespace byteps {
             std::vector <long long> pre_run_time;
             bool finish_tag[1600] = {false};
             long long _grad_tic[1600] = {0};
+            long long _push_start_tic[1600] = {0};
             int _tensor_part[1600] = {0};
             int _visited[1600] = {0};
             std::stack<int> _mystack;

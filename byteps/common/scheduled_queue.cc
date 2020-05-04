@@ -214,7 +214,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
-    BPS_LOG(INFO) << "addTask 1";
     if (!_dequeue) {
       msit = findTask(expected_priority * -1);
       if (msit == _ms.end()) {
@@ -324,6 +323,15 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
                      << " rank: " << BytePSGlobal::GetLocalRank();
       task->ready_event = nullptr;
       recorderTs(task);
+      if (BytePSGlobal::pre_run && _qt == PUSH) {
+        int id = task->priority * -1;
+        auto now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+        auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+        if (_push_start_tic[id] == 0) {
+          _push_start_tic[id] = (long long)us.count();
+        }
+      }
       return task;
     }
   }
@@ -370,6 +378,14 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
   if (BytePSGlobal::pre_run && _qt == PUSH) {
     int id = priority * -1;
     finish_count += finish_tag[id] ? 0 : 1;
+    if (!finish_tag[id]) {
+      auto now = std::chrono::system_clock::now();
+      auto duration = now.time_since_epoch();
+      auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+      long long tac = (long long)us.count();
+      double possible_B = (double)size / (tac - _push_start_tic[id]);
+      BPS_LOG(INFO) << "id = " << id << ", (tac - tic) = (" << tac << " - " << _push_start_tic[id] << "), possible_B = " << possible_B;
+    }
     finish_tag[id] = true;
     if (finish_count == BytePSGlobal::total_grad) {
       BytePSGlobal::pre_run = false;
