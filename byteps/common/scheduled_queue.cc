@@ -26,7 +26,6 @@ namespace common {
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
   B *= 125;
   B *= (int)((double)batchsize / 64);
-  B /= 1000;
 
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
@@ -134,6 +133,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         for (int i = 0; i < BytePSGlobal::total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
+            diff /= 1000; // microsecond to millisecond
             BytePSGlobal::_grad_checkpoint.push_back(i);
             BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
           }
@@ -372,7 +372,7 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
       long long tac = (long long)us.count();
-      long long t = (tac - _push_start_tic[id]) / 1000000.0;
+      long long t = (tac - _push_start_tic[id]) / 1000000;
       double possible_B = (double)size / t;
       BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B << " Bytes/sec.";
     }
