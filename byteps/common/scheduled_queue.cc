@@ -281,7 +281,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       if (_mystack.empty() && _meetzero) {
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
-        expected_priority = BytePSGlobal::total_grad;
+        expected_priority = BytePSGlobal::total_grad - 1;
         _stagestart = 1;
         _meetzero = 0;
         _sizepointer = 0;
@@ -393,6 +393,7 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
     finish_tag[id] = true;
     if (finish_count == BytePSGlobal::total_grad) {
       BytePSGlobal::pre_run = false;
+      BPS_LOG(INFO) << "pre run done";
     }
   } else if (_qt == PUSH && size > 0 && _meetzero) {
     _bps_credit += size;
