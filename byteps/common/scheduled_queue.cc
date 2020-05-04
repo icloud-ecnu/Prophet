@@ -124,13 +124,15 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       if (processed_grad_count == BytePSGlobal::total_grad) {
         double avg = 0;
         for (int i = 1; i <= processed_grad_count; i++) {
-          long long x = llabs(_grad_tic[i] - _grad_tic[i - 1]);
+          BPS_LOG(INFO) << "fabs(" << _grad_tic[i] << " - " << _grad_tic[i - 1] << ") = " << llabs(_grad_tic[i] - _grad_tic[i - 1]);
+          double x = fabs(_grad_tic[i] - _grad_tic[i - 1]);
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * x;
         }
         avg *= 20;
+        BPS_LOG(INFO) << avg;
         BytePSGlobal::_grad_checkpoint.push_back(-1);
         for (int i = 0; i < BytePSGlobal::total_grad; i++) {
-          int diff = llabs(_grad_tic[i] - _grad_tic[i + 1]);
+          double diff = fabs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
             diff /= 1000; // microsecond to millisecond
             BPS_LOG(INFO) << "gap between " << i << " and " << (i + 1) << ": " << diff;

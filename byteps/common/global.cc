@@ -45,7 +45,7 @@ int BytePSGlobal::pushsize[20] = {0};
 bool BytePSGlobal::pre_run = true;
 int BytePSGlobal::total_grad = -1;
 std::vector <int> BytePSGlobal::_grad_checkpoint;
-std::vector <int> BytePSGlobal::_backward_exec;
+std::vector <double> BytePSGlobal::_backward_exec;
 
 
 int BytePSGlobal::_is_trace = 0;
