@@ -111,7 +111,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
     if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) != (entry->tensor_name).npos) {
       int pr = entry->priority * -1;
       if (pr > BytePSGlobal::total_grad) {
-        BytePSGlobal::total_grad = pr;
+        BytePSGlobal::total_grad = pr + 1;
       }
       auto now = std::chrono::system_clock::now();
       auto duration = now.time_since_epoch();
@@ -124,12 +124,12 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       if (processed_grad_count == BytePSGlobal::total_grad) {
         double avg = 0;
         for (int i = 1; i <= processed_grad_count; i++) {
-          BPS_LOG(INFO) << "fabs(" << _grad_tic[i] << " - " << _grad_tic[i - 1] << ") = " << llabs(_grad_tic[i] - _grad_tic[i - 1]);
+          BPS_LOG(INFO) << "fabs(" << _grad_tic[i] << " - " << _grad_tic[i - 1] << ") = " << fabs(_grad_tic[i] - _grad_tic[i - 1]);
           double x = fabs(_grad_tic[i] - _grad_tic[i - 1]);
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * x;
         }
         avg *= 20;
-        BPS_LOG(INFO) << avg;
+        BPS_LOG(INFO) << "avg = " << avg;
         BytePSGlobal::_grad_checkpoint.push_back(-1);
         for (int i = 0; i < BytePSGlobal::total_grad; i++) {
           double diff = fabs(_grad_tic[i] - _grad_tic[i + 1]);
