@@ -107,7 +107,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
 //          << "=====================_grad_checkpoint=====================";
 //      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
 //        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
-      }
+//      }
     }
   }
   if (BytePSGlobal::pre_run) {
