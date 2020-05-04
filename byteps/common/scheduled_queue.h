@@ -58,7 +58,6 @@ namespace byteps {
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
             std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
-            std::vector <long long> pre_run_time;
             bool finish_tag[1600] = {false};
             long long _grad_tic[1600] = {0};
             long long _push_start_tic[1600] = {0};

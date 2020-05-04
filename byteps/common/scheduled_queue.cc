@@ -117,23 +117,20 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
       long long tic = (long long)us.count();
-      pre_run_time.push_back(tic);
       if (_grad_tic[pr] == 0) {
         processed_grad_count++;
         _grad_tic[pr] = tic;
       }
       if (processed_grad_count == BytePSGlobal::total_grad) {
-        int len = pre_run_time.size();
         double avg = 0;
-        for (int i = 1; i < len; i++) {
-          pre_run_time[i - 1] = pre_run_time[i] - pre_run_time[i - 1];
-          avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * pre_run_time[i - 1];
+        for (int i = 1; i <= processed_grad_count; i++) {
+          long long x = llabs(_grad_tic[i] - _grad_tic[i - 1]);
+          avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * x;
         }
-        avg *= 50;
-        pre_run_time.clear();
+        avg *= 20;
         BytePSGlobal::_grad_checkpoint.push_back(-1);
         for (int i = 0; i < BytePSGlobal::total_grad; i++) {
-          int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
+          int diff = llabs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
             diff /= 1000; // microsecond to millisecond
             BPS_LOG(INFO) << "gap between " << i << " and " << (i + 1) << ": " << diff;
@@ -381,9 +378,9 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
       long long tac = (long long)us.count();
       long long t = tac - _push_start_tic[id];
-      BPS_LOG(INFO) << "id = " << id << ", size = " << size << ", t = " << t;
+//      BPS_LOG(INFO) << "id = " << id << ", size = " << size << ", t = " << t;
       double possible_B = (double)size * 1000.0 / t;
-      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B << " Bytes/ms.";
+//      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B << " Bytes/ms.";
       // TODO if > 20%, set new Global B
     }
     finish_tag[id] = true;
