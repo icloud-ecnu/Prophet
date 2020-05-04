@@ -154,6 +154,7 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   } else {
     if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) !=
                            (entry->tensor_name).npos) {
+      BPS_LOG(INFO) << "ms.insert()";
       _ms.insert(entry);
       _tensor_part[entry->priority * -1] = entry->total_partnum;
     } else {
@@ -219,6 +220,9 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
   std::lock_guard<std::mutex> lock(_mutex);
   std::shared_ptr<TensorTableEntry> task;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator msit;
+  if (!BytePSGlobal::pre_run && _qt == PUSH) {
+    BPS_LOG(INFO) << "_ms.size() = " << _ms.size();
+  }
   if (!BytePSGlobal::pre_run && _qt == PUSH && _ms.size() > 0) {
     if (!_dequeue) {
       BPS_LOG(INFO) << "here 1";
@@ -281,7 +285,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (_mystack.empty() && _meetzero) {
         BPS_LOG(INFO) << "RESET";
-
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = BytePSGlobal::total_grad - 1;
@@ -299,7 +302,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       return task;
     }
   } else {
-    BPS_LOG(INFO) << "here 3";
     for (auto it = _sq.begin(); it != _sq.end(); ++it) {
       if ((*it)->ready_event) {
         if (!(*it)->ready_event->Ready()) {
