@@ -24,8 +24,10 @@ namespace byteps {
 namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-  B *= 125;
+  B /= 1000; // B -> Bytes/sec => Bytes/millisecond
   B *= (int)((double)batchsize / 64);
+
+  // 原 B -> Mbits/sec => B * 1000000 (to bits/sec) / 1000 (to bits/millisecond) * 8 (to Bytes/ms), 即 B *= 125
 
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
@@ -133,6 +135,11 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
         for (int i = 0; i < BytePSGlobal::total_grad; i++) {
           int diff = abs(_grad_tic[i] - _grad_tic[i + 1]);
           if ( diff > avg ) {
+            if (BytePSGlobal::_backward_exec.size() == 0) {
+              int _diff = abs(_grad_tic[i] - _grad_tic[0]);
+              _diff /= 1000;
+              BytePSGlobal::_backward_exec.push_back(_diff);
+            }
             diff /= 1000; // microsecond to millisecond
             BytePSGlobal::_grad_checkpoint.push_back(i);
             BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
@@ -372,14 +379,15 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
       long long tac = (long long)us.count();
-      long long t = (tac - _push_start_tic[id]) / 1000000;
+      long long t = (tac - _push_start_tic[id]) / 1000;
+      BPS_LOG(INFO) << "id = " << id << ", size = " << size << ", t = " << t;
       double possible_B = (double)size / t;
       BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B << " Bytes/sec.";
+      // TODO if > 20%, set new Global B
     }
     finish_tag[id] = true;
     if (finish_count == BytePSGlobal::total_grad) {
       BytePSGlobal::pre_run = false;
-      BPS_LOG(INFO) << "Pre_run done!";
     }
   } else if (_qt == PUSH && size > 0 && _meetzero) {
     _bps_credit += size;
