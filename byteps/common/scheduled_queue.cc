@@ -388,10 +388,11 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       long long tac = (long long)us.count();
       double t = (double)(tac - _push_start_tic[id]);
       double possible_B = (double)size * 1000.0 / t;
+      possible_B *= 10;
       BPS_LOG(INFO) << "possible_B = " << possible_B << " Bytes/ms.";
       if (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B > 0.2) {
         BytePSGlobal::B = possible_B;
-        BPS_LOG(INFO) << "Exceeded threshold " << (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B)
+        BPS_LOG(INFO) << fabs(possible_B - BytePSGlobal::B) << " / " << (double)BytePSGlobal::B <<" exceeded threshold " << (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B)
           << ", update B to " << possible_B;
       }
     }
