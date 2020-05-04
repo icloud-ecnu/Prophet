@@ -24,10 +24,12 @@ namespace byteps {
 namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-  B /= 1000; // B -> Bytes/sec => Bytes/millisecond
+//  B /= 1000;  // B -> Bytes/sec => Bytes/millisecond
   B *= (int)((double)batchsize / 64);
 
-  // 原 B -> Mbits/sec => B * 1000000 (to bits/sec) / 1000 (to bits/millisecond) * 8 (to Bytes/ms), 即 B *= 125
+  // 原 B -> Mbits/sec => B * 1000000 (to bits/sec) / 1000 (to bits/millisecond)
+//   * 8 (to Bytes/ms), 即 B *= 125
+B *= 125;
 
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
@@ -45,8 +47,8 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
   _qt = type;
   _credits = _is_scheduled
-             ? BytePSGlobal::GetPartitionBound() * credit_in_partition
-             : 34359738368;  // 32GB, basically disabling credit control
+                 ? BytePSGlobal::GetPartitionBound() * credit_in_partition
+                 : 34359738368;  // 32GB, basically disabling credit control
   _rt = nullptr;
 
   switch (_qt) {
@@ -90,17 +92,19 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
-//  BPS_LOG(INFO) << "addTask";
+  //  BPS_LOG(INFO) << "addTask";
   if (!pre_run_result_sync) {
     if (!BytePSGlobal::pre_run && _qt == PUSH) {
       pre_run_result_sync = true;
       expected_priority = BytePSGlobal::total_grad;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-      BPS_LOG(INFO) << "=====================_backward_exec=====================";
+      BPS_LOG(INFO)
+          << "=====================_backward_exec=====================";
       for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
         BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
       }
-      BPS_LOG(INFO) << "=====================_grad_checkpoint=====================";
+      BPS_LOG(INFO)
+          << "=====================_grad_checkpoint=====================";
       for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
         BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
       }
@@ -108,7 +112,8 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   }
   if (BytePSGlobal::pre_run) {
     _sq.push_back(entry);
-    if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) != (entry->tensor_name).npos) {
+    if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) !=
+                           (entry->tensor_name).npos) {
       int pr = entry->priority * -1;
       if (pr > BytePSGlobal::total_grad) {
         BytePSGlobal::total_grad = pr + 1;
@@ -127,27 +132,28 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
           double x = fabs(_grad_tic[i] - _grad_tic[i - 1]);
           avg = (((double)(i - 1)) / i) * avg + (((double)(1)) / i) * x;
         }
-        BPS_LOG(INFO) << "avg = " << avg;
+        avg *= 2;
         BytePSGlobal::_grad_checkpoint.push_back(-1);
         for (int i = 1; i < BytePSGlobal::total_grad; i++) {
           double diff = fabs(_grad_tic[i] - _grad_tic[i - 1]);
-          if ( diff > avg ) {
-            diff /= 1000; // microsecond to millisecond
-            BPS_LOG(INFO) << "gap between " << i << " and " << (i - 1) << ": " << diff;
+          if (diff > avg) {
+            diff /= 1000;  // microsecond to millisecond
             if (BytePSGlobal::_backward_exec.size() == 0) {
               double _diff = fabs(_grad_tic[i - 1] - _grad_tic[0]);
               _diff /= 1000;
               BytePSGlobal::_backward_exec.push_back(_diff);
             }
             BytePSGlobal::_grad_checkpoint.push_back(i - 1);
-            BytePSGlobal::_backward_exec.insert(BytePSGlobal::_backward_exec.begin(), diff);
+            BytePSGlobal::_backward_exec.insert(
+                BytePSGlobal::_backward_exec.begin(), diff);
           }
         }
         BytePSGlobal::_grad_checkpoint.push_back(BytePSGlobal::total_grad - 1);
       }
     }
   } else {
-    if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) != (entry->tensor_name).npos) {
+    if (_qt == PUSH && (entry->tensor_name).find(tensor_keywords) !=
+                           (entry->tensor_name).npos) {
       _ms.insert(entry);
       _tensor_part[entry->priority * -1] = entry->total_partnum;
     } else {
@@ -198,7 +204,7 @@ BytePSScheduledQueue::findTask(int priority) {
   std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
   e->priority = priority;
   std::multiset<std::shared_ptr<TensorTableEntry>>::iterator it =
-                                                                 _ms.lower_bound(e);
+      _ms.lower_bound(e);
   if (it == _ms.end()) {
     return it;
   } else if ((*it)->priority != priority) {
@@ -233,7 +239,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       }
       if (expected_priority == BytePSGlobal::_grad_checkpoint[_pointer - 1]) {
         _dequeue = 1;
-        dynamic_size = BytePSGlobal::_backward_exec[_sizepointer++] * B;
+        dynamic_size = (long long)BytePSGlobal::_backward_exec[_sizepointer++] * B;
       }
       return nullptr;
     } else {
@@ -321,7 +327,8 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         int id = task->priority * -1;
         auto now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
-        auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+        auto us =
+            std::chrono::duration_cast<std::chrono::microseconds>(duration);
         if (_push_start_tic[id] == 0) {
           _push_start_tic[id] = (long long)us.count();
         }
@@ -377,10 +384,10 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       auto duration = now.time_since_epoch();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
       long long tac = (long long)us.count();
-      long long t = tac - _push_start_tic[id];
-//      BPS_LOG(INFO) << "id = " << id << ", size = " << size << ", t = " << t;
+      double t = (double)(tac - _push_start_tic[id]);
       double possible_B = (double)size * 1000.0 / t;
-//      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B << " Bytes/ms.";
+      BPS_LOG(INFO) << "id = " << id << ", possible_B = " << possible_B
+                    << " Bytes/ms.";
       // TODO if > 20%, set new Global B
     }
     finish_tag[id] = true;
