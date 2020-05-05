@@ -388,11 +388,11 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       long long tac = (long long)us.count();
       double t = (double)(tac - _push_start_tic[id]);
       double possible_B = (double)size * 1000.0 / t;
-      possible_B *= 10; //TODO
-      if (possible_B > (double)BytePSGlobal::B) {
-        BytePSGlobal::B = (long long)possible_B;
+//      possible_B *= 1; //TODO
+//      if (possible_B > (double)BytePSGlobal::B) {
+//        BytePSGlobal::B = (long long)possible_B;
         BPS_LOG(INFO) << "update B to " << BytePSGlobal::B;
-      }
+//      }
     }
     finish_tag[id] = true;
     if (finish_count == BytePSGlobal::total_grad) {
