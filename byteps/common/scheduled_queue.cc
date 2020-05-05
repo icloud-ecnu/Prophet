@@ -98,8 +98,6 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       pre_run_result_sync = true;
       expected_priority = BytePSGlobal::total_grad - 1;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-
-      BytePSGlobal::B *= (long long)((double)batchsize / 64 * BytePSGlobal::B);
       BPS_LOG(INFO) << "BytePSGlobal::B = " << BytePSGlobal::B;
       BPS_LOG(INFO) << "expected_priority = " << expected_priority;
       BPS_LOG(INFO) << "_pointer = " << _pointer;
