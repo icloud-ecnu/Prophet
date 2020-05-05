@@ -24,12 +24,11 @@ namespace byteps {
 namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
-  BytePSGlobal::B *= (long long)((double)batchsize / 64 * BytePSGlobal::B);
 
   // 原 B -> Mbits/sec => B * 1000000 (to bits/sec) / 1000 (to bits/millisecond)
 //   * 8 (to Bytes/ms), 即 B *= 125
-  B *= (int)((double)batchsize / 64);
-  B *= 125;
+//  B *= (int)((double)batchsize / 64);
+//  B *= 125;
 
 
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
@@ -99,16 +98,22 @@ void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
       pre_run_result_sync = true;
       expected_priority = BytePSGlobal::total_grad - 1;
       _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
-//      BPS_LOG(INFO)
-//          << "=====================_backward_exec=====================";
-//      for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
-//        BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
-//      }
-//      BPS_LOG(INFO)
-//          << "=====================_grad_checkpoint=====================";
-//      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
-//        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
-//      }
+
+      BytePSGlobal::B *= (long long)((double)batchsize / 64 * BytePSGlobal::B);
+      BPS_LOG(INFO) << "BytePSGlobal::B = " << BytePSGlobal::B;
+      BPS_LOG(INFO) << "expected_priority = " << expected_priority;
+      BPS_LOG(INFO) << "_pointer = " << _pointer;
+
+      BPS_LOG(INFO)
+          << "=====================_backward_exec=====================";
+      for (int i = 0; i < BytePSGlobal::_backward_exec.size(); i++) {
+        BPS_LOG(INFO) << BytePSGlobal::_backward_exec[i];
+      }
+      BPS_LOG(INFO)
+          << "=====================_grad_checkpoint=====================";
+      for (int i = 0; i < BytePSGlobal::_grad_checkpoint.size(); i++) {
+        BPS_LOG(INFO) << BytePSGlobal::_grad_checkpoint[i];
+      }
     }
   }
   if (BytePSGlobal::pre_run) {
