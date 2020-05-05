@@ -25,12 +25,6 @@ namespace common {
 
 BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-  // 原 B -> Mbits/sec => B * 1000000 (to bits/sec) / 1000 (to bits/millisecond)
-//   * 8 (to Bytes/ms), 即 B *= 125
-//  B *= (int)((double)batchsize / 64);
-//  B *= 125;
-
-
   if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
     _is_scheduled = true;
   } else {
@@ -92,7 +86,6 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
-  //  BPS_LOG(INFO) << "addTask";
   if (!pre_run_result_sync) {
     if (!BytePSGlobal::pre_run && _qt == PUSH) {
       pre_run_result_sync = true;
@@ -284,7 +277,6 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
         _mystack.pop();
       }
       if (_mystack.empty() && _meetzero) {
-        BPS_LOG(INFO) << "RESET";
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = BytePSGlobal::total_grad - 1;
@@ -392,10 +384,8 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       long long tac = (long long)us.count();
       double t = (double)(tac - _push_start_tic[id]);
       double possible_B = (double)size * 1000.0 / t;
-//      possible_B *= 1; //TODO
       if (possible_B > (double)BytePSGlobal::B) {
         BytePSGlobal::B = (long long)possible_B;
-        BPS_LOG(INFO) << "update B to " << BytePSGlobal::B;
       }
     }
     finish_tag[id] = true;
