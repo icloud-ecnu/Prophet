@@ -390,11 +390,11 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       double possible_B = (double)size * 1000.0 / t;
       possible_B *= 10;
       BPS_LOG(INFO) << "possible_B = " << possible_B << " Bytes/ms.";
-      if (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B > 0.2) {
-        BPS_LOG(INFO) << fabs(possible_B - BytePSGlobal::B) << " / " << (double)BytePSGlobal::B <<" exceeded threshold " << (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B)
-          << ", update B to " << possible_B;
-        BytePSGlobal::B = possible_B;
-      }
+//      if (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B > 0.2) {
+//        BPS_LOG(INFO) << fabs(possible_B - BytePSGlobal::B) << " / " << (double)BytePSGlobal::B <<" exceeded threshold " << (fabs(possible_B - BytePSGlobal::B) / (double)BytePSGlobal::B)
+//          << ", update B to " << possible_B;
+//        BytePSGlobal::B = possible_B;
+//      }
     }
     finish_tag[id] = true;
     if (finish_count == BytePSGlobal::total_grad) {
