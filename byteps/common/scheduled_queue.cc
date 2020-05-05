@@ -393,7 +393,7 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       double possible_B = (double)size * 1000.0 / t;
 //      possible_B *= 1; //TODO
 //      if (possible_B > (double)BytePSGlobal::B) {
-//        BytePSGlobal::B = (long long)possible_B;
+        BytePSGlobal::B = (long long)possible_B;
         BPS_LOG(INFO) << "update B to " << BytePSGlobal::B;
 //      }
     }
