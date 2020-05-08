@@ -86,7 +86,7 @@ BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
 void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
   std::lock_guard<std::mutex> lock(_mutex);
-  //  BPS_LOG(INFO) << "addTask";
+  //  BPS_LOG(TRACE) << "addTask";
   if (!pre_run_result_sync) {
     if (!BytePSGlobal::pre_run && _qt == PUSH) {
       pre_run_result_sync = true;
@@ -238,7 +238,7 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       if (expected_priority == BytePSGlobal::_grad_checkpoint[_pointer - 1]) {
         _dequeue = 1;
         dynamic_size = (long long)(BytePSGlobal::_backward_exec[_sizepointer++] + 1) * BytePSGlobal::B;
-//        BPS_LOG(INFO) << "Ready to dequeue: dynamic_size changed to " << dynamic_size;
+//        BPS_LOG(TRACE) << "Ready to dequeue: dynamic_size changed to " << dynamic_size;
       }
       return nullptr;
     } else {
@@ -258,12 +258,12 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       task = *msit;
       if (!_meetzero) {
         if (dynamic_size > task->len) {
-          BPS_LOG(INFO) << "Start " << task->priority;
+          BPS_LOG(TRACE) << "Start " << task->priority;
           dynamic_size -= task->len;
           _ms.erase(msit);
           _mystack.pop();
         } else {
-          BPS_LOG(INFO) << "No size, enqueue";
+          BPS_LOG(TRACE) << "No size, enqueue";
           _dequeue = 0;
           if (_pointer > 0) {
             _pointer--;
@@ -275,13 +275,13 @@ std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
       } else if (_bps_credit < task->len) {
         return nullptr;
       } else if (_bps_credit > task->len) {
-        BPS_LOG(INFO) << "After zero, in credit: " << task->priority;
+        BPS_LOG(TRACE) << "After zero, in credit: " << task->priority;
         _bps_credit -= task->len;
         _ms.erase(msit);
         _mystack.pop();
       }
       if (_mystack.empty() && _meetzero) {
-        BPS_LOG(INFO) << "RESET";
+        BPS_LOG(TRACE) << "RESET";
         _pointer = BytePSGlobal::_grad_checkpoint.size() - 1;
         _dequeue = 0;
         expected_priority = BytePSGlobal::total_grad - 1;
@@ -391,7 +391,8 @@ void BytePSScheduledQueue::reportFinish(int size, int priority) {
       double possible_B = (double)size * 1000.0 / t;
 //      possible_B *= 1; //TODO
       if (possible_B > (double)BytePSGlobal::B) {
-        BytePSGlobal::B = (long long)possible_B;
+//        BytePSGlobal::B = (long long)possible_B;
+        BytePSGlobal::B = 125000;
       }
     }
     finish_tag[id] = true;
