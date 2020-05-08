@@ -47,7 +47,7 @@ namespace byteps {
 
             uint32_t pendingSize();
 
-            void reportFinish(int size, int priority);
+            void reportFinish(int size);
 
         private:
             struct comparator {
@@ -58,40 +58,33 @@ namespace byteps {
             std::vector <std::shared_ptr<TensorTableEntry>> _sq;
             std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
             std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
-            bool finish_tag[1600] = {false};
-            double _grad_tic[1600] = {0};
-            double _push_start_tic[1600] = {0};
-            int _tensor_part[1600] = {0};
-            int _visited[1600] = {0};
             std::stack<int> _mystack;
             std::stack<int> _mystackpull;
             std::mutex _mutex;
             uint64_t _credits;
             bool _is_scheduled;
+            int _tensor_part[160] = {0};
+            int _visited[160] = {0};
             int _meetzero = 0;
             int _dooropen = 11;
             int _pulldoor = 0;
-            std::string tensor_keywords = std::string(getenv("ZZW_TENSOR_KEYWORDS"));
             int batchsize = atoi(getenv("Z_BATCH_SIZE"));
-//            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
+            int _grad_checkpoint[13] = {-1, 1, 13, 27, 37, 0, 77, 90, 103, 117, 130, 143, 156};
             int B = atoi(getenv("BPS_NET_B"));
             int _door = atoi(getenv("BPS_DOORS"));
             long long _bps_credit = atoi(getenv("BPS_CREDIT"));
-//            long long _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90, 74, 58, 15, 0};
+            long long _backward_exec[13] =  {285.4, 196.2, 33.2, 0, 0, 53, 44, 64, 90, 74, 58, 15, 0};
             int _exec_stage = 0;
             int _noleftsize = 0;
             int _sizepointer = 0;
             int _stagepullnum = 0;
             int _dequeue = 0;
-            int _pointer = -1;
+            int _pointer = 4;
             int _stagestart = 1;
             long long dynamic_size = 0;
             int _pushsize = 0;
             int _pullsize = 0;
-            int expected_priority = -1;
-            int processed_grad_count = 0;
-            int finish_count = 0;
-            bool pre_run_result_sync = false;
+            int expected_priority = _grad_checkpoint[_pointer];
             QueueType _qt;
             ReadyTable *_rt;
         };

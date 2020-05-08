@@ -42,13 +42,6 @@ uint32_t BytePSGlobal::_partition_bytes = 4096000;
 //added by chris
 int BytePSGlobal::pushsize[20] = {0};
 
-bool BytePSGlobal::pre_run = true;
-int BytePSGlobal::total_grad = -1;
-std::vector <int> BytePSGlobal::_grad_checkpoint;
-std::vector <double> BytePSGlobal::_backward_exec;
-long long BytePSGlobal::B = 0 * 1000 * 1 * 125;
-
-
 int BytePSGlobal::_is_trace = 0;
 int BytePSGlobal::_start_step = 10;
 int BytePSGlobal::_end_step = 20;
@@ -110,8 +103,6 @@ void BytePSGlobal::Init() {
   if (_initialized) {
     return;
   }
-
-  BPS_LOG(INFO) << "Init()";
 
   // Set the profiling-related variables
   _is_trace = getenv("BYTEPS_TRACE_ON") ? atoi(getenv("BYTEPS_TRACE_ON")) : _is_trace;
