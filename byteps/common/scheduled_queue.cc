@@ -92,7 +92,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("DistributedGradientDescentOptimizer_Push_Pull/BytePSPushPull_gradients_vgg16_predictions_BiasAdd_grad_tuple_control_dependency_1_0") != (entry->tensor_name).npos) {
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
@@ -224,7 +224,7 @@ namespace byteps {
                     _sizepointer = 0;
                     _dooropen = _door;
                     _bps_credit = atoi(getenv("BPS_CREDIT"));
-                    for (int i = 0; i < 160; i++) {
+                    for (int i = 0; i < 500; i++) {
                         _visited[i] = 0;
                     }
                 }
