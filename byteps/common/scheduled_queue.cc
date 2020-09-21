@@ -94,6 +94,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
+                BPS_LOG(INFO) << "add " << (entry->priority);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
@@ -161,6 +162,7 @@ namespace byteps {
                 if (msit == _ms.end()) {
                     return nullptr;
                 }
+                BPS_LOG(INFO) << "expect " << (expected_priority);
                 if (!_visited[expected_priority]) {
                     for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                         _mystack.push(expected_priority * -1);
@@ -228,6 +230,7 @@ namespace byteps {
                         _visited[i] = 0;
                     }
                 }
+                BPS_LOG(INFO) << "push " << (task->priority);
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
