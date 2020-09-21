@@ -228,6 +228,7 @@ namespace byteps {
                         _visited[i] = 0;
                     }
                 }
+                BPS_LOG(INFO) << "push " << (task->priority);
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
