@@ -93,6 +93,7 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                BPS_LOG(INFO) << "add: " << entry->priority;
                 _ms.insert(entry);
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
@@ -157,6 +158,7 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+                BPS_LOG(INFO) << "preprocessing: expected_priority " << expected_priority;
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -228,7 +230,7 @@ namespace byteps {
                         _visited[i] = 0;
                     }
                 }
-                BPS_LOG(INFO) << "push " << (task->priority);
+                BPS_LOG(INFO) << "prophet push " << (task->priority);
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
@@ -259,6 +261,7 @@ namespace byteps {
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
+                    BPS_LOG(INFO) << "default push " << (task->priority);
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
