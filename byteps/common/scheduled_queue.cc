@@ -25,7 +25,7 @@ namespace byteps {
 
             B *= 125;
             for (int i = 0; i < 29; i++) {
-                _backward_exec[i] *= (int)((double)batchsize/64);
+                _backward_exec[i] = (int)(_backward_exec[i] * ((double)batchsize/64.0));
             }
             for (int i = 0; i < 29; i++) {
                 _backward_exec[i] *= B;
