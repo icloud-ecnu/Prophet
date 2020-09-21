@@ -24,10 +24,10 @@ namespace byteps {
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
             B *= 125;
-            for (int i = 0; i < 29; i++) {
-                _backward_exec[i] = (int)(_backward_exec[i] * ((double)batchsize/64.0));
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] = (int)(_backward_exec[i] * (double)batchsize/64.0);
             }
-            for (int i = 0; i < 29; i++) {
+            for (int i = 0; i < 13; i++) {
                 _backward_exec[i] *= B;
             }
 
@@ -217,14 +217,14 @@ namespace byteps {
                 }
                 if (_mystack.empty() && _meetzero) {
                     _dequeue = 0;
-                    _pointer = 28;
+                    _pointer = 12;
                     expected_priority = _grad_checkpoint[_pointer];
                     _stagestart = 1;
                     _meetzero = 0;
                     _sizepointer = 0;
                     _dooropen = _door;
                     _bps_credit = atoi(getenv("BPS_CREDIT"));
-                    for (int i = 0; i < 500; i++) {
+                    for (int i = 0; i < 160; i++) {
                         _visited[i] = 0;
                     }
                 }
