@@ -24,10 +24,10 @@ namespace byteps {
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
             B *= 125;
-            for (int i = 0; i < 13; i++) {
+            for (int i = 0; i < 29; i++) {
                 _backward_exec[i] *= (int)((double)batchsize/64);
             }
-            for (int i = 0; i < 13; i++) {
+            for (int i = 0; i < 29; i++) {
                 _backward_exec[i] *= B;
             }
 
@@ -217,7 +217,7 @@ namespace byteps {
                 }
                 if (_mystack.empty() && _meetzero) {
                     _dequeue = 0;
-                    _pointer = 12;
+                    _pointer = 28;
                     expected_priority = _grad_checkpoint[_pointer];
                     _stagestart = 1;
                     _meetzero = 0;
