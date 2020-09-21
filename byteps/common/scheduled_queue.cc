@@ -261,7 +261,6 @@ namespace byteps {
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
-                    BPS_LOG(INFO) << "default push " << (task->priority);
                     task->ready_event = nullptr;
                     recorderTs(task);
                     return task;
