@@ -49,6 +49,8 @@ namespace byteps {
 
             void reportFinish(int size);
 
+            void BytePSScheduledQueue::SplitString(const std::string& s, std::vector<std::string>& v, const std::string& c);
+
         private:
             struct comparator {
                 bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {

@@ -90,11 +90,29 @@ namespace byteps {
             }
         }
 
+        void BytePSScheduledQueue::SplitString(const std::string& s, std::vector<std::string>& v, const std::string& c)
+        {
+        std::string::size_type pos1, pos2;
+        pos2 = s.find(c);
+        pos1 = 0;
+        while(std::string::npos != pos2)
+        {
+            v.push_back(s.substr(pos1, pos2-pos1));
+        
+            pos1 = pos2 + c.size();
+            pos2 = s.find(c, pos1);
+        }
+        if(pos1 != s.length())
+            v.push_back(s.substr(pos1));
+        }
+
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                entry->priority = atoi(entry->tensor_name.split("_")[1]);
+                std::vector<std::string> ss;
+                SplitString(s, ss, "_");
+                entry->priority = atoi(ss[1]);
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
