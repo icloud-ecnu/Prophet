@@ -158,6 +158,7 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+                BPS_LOG(INFO) << "here 1: " << _ms.size();
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -238,6 +239,7 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else {
+                BPS_LOG(INFO) << "here 2: " << _ms.size();
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {
