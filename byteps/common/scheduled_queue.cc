@@ -23,7 +23,6 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-            added = 0;
             B *= 125;
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] = (long long)(_backward_exec[i] * (double)batchsize/64.0);
@@ -95,9 +94,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                BPS_LOG(INFO) << "add " << (entry->priority) << ", now size=" << _ms.size();
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
-                added=1;
             } else {
                 _sq.push_back(entry);
             }
@@ -160,7 +157,6 @@ namespace byteps {
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
-                BPS_LOG(INFO) << "here 1, expect " << expected_priority << " in size " << _ms.size();
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
                     return nullptr;
@@ -176,8 +172,6 @@ namespace byteps {
                 }
                 if (expected_priority >= 0) {
                     expected_priority--;
-                } else {
-                    _dequeue = 1;
                 }
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
@@ -186,7 +180,6 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _dequeue && _ms.size() > 0) {
-                BPS_LOG(INFO) << "prophet in size " << _ms.size();
                 if (_mystack.size() == 0) {
                     _dequeue = 0;
                     if (_pointer > 0) {
@@ -231,18 +224,14 @@ namespace byteps {
                     _sizepointer = 0;
                     _dooropen = _door;
                     _bps_credit = atoi(getenv("BPS_CREDIT"));
-                    for (int i = 0; i < 500; i++) {
+                    for (int i = 0; i < 300; i++) {
                         _visited[i] = 0;
                     }
-                    BPS_LOG(INFO) << "reset";
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
                 return task;
             } else {
-                if (_qt == PUSH && added) {
-                   BPS_LOG(INFO) << "here 2: " << _ms.size();
-                }
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {
@@ -266,7 +255,6 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
-                    // BPS_LOG(INFO) << task->tensor_name;
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
