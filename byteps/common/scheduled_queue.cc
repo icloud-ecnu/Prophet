@@ -23,6 +23,7 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
+            added = 0;
             B *= 125;
             for (int i = 0; i < 13; i++) {
                 _backward_exec[i] = (long long)(_backward_exec[i] * (double)batchsize/64.0);
@@ -96,6 +97,7 @@ namespace byteps {
                 _ms.insert(entry);
                 BPS_LOG(INFO) << "add " << (entry->priority) << ", now size=" << _ms.size();
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
+                added=1;
             } else {
                 _sq.push_back(entry);
             }
@@ -239,7 +241,9 @@ namespace byteps {
                 recorderTs(task);
                 return task;
             } else {
-                BPS_LOG(INFO) << "here 2: " << _ms.size();
+                if (_qt == PUSH && added) {
+                   BPS_LOG(INFO) << "here 2: " << _ms.size();
+                }
                 for (auto it = _sq.begin(); it != _sq.end(); ++it) {
 
                     if ((*it)->ready_event) {

@@ -89,6 +89,7 @@ namespace byteps {
             int _pushsize = 0;
             int _pullsize = 0;
             int expected_priority = _grad_checkpoint[_pointer];
+            int added = 0;
             QueueType _qt;
             ReadyTable *_rt;
         };
