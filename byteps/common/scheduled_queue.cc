@@ -112,7 +112,7 @@ namespace byteps {
                 _ms.insert(entry);
                 std::vector<std::string> ss;
                 SplitString(s, ss, "_");
-                entry->priority = atoi(ss[1]);
+                entry->priority = stoi(ss[1]);
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
