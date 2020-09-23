@@ -94,6 +94,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
+                entry->priority = atoi(s_split(entry->tensor_name, "_")[1]);
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
