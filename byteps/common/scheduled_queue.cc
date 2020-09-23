@@ -94,7 +94,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                BPS_LOG(INFO) << "add " << (entry->priority);
+                BPS_LOG(INFO) << "add " << (entry->priority) << ", now size=" << _ms.size();
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
@@ -157,7 +157,6 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
-            BPS_LOG(INFO) << "_dequeue=" << _dequeue << ",_ms.size()=" << _ms.size() << ",expected_priority=" << expected_priority;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
