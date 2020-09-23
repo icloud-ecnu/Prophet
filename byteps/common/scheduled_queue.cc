@@ -90,35 +90,12 @@ namespace byteps {
             }
         }
 
-        void BytePSScheduledQueue::SplitString(const std::string& s, std::vector<std::string>& v, const std::string& c)
-        {
-        std::string::size_type pos1, pos2;
-        pos2 = s.find(c);
-        pos1 = 0;
-        while(std::string::npos != pos2)
-        {
-            v.push_back(s.substr(pos1, pos2-pos1));
-        
-            pos1 = pos2 + c.size();
-            pos2 = s.find(c, pos1);
-        }
-        if(pos1 != s.length())
-            v.push_back(s.substr(pos1));
-        }
-
-        int BytePSScheduledQueue::getPriority(const std::string& s) {
-            std::vector<std::string> ss;
-            SplitString(s, ss, "_");
-            return stoi(ss[1]);
-        }
-
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                int p = getPriority(entry->tensor_name);
-                BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (p) << ")";
-                _tensor_part[p * -1] = entry->total_partnum;
+                BPS_LOG(INFO) << "add " << (entry->priority);
+                _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
             }
@@ -162,14 +139,18 @@ namespace byteps {
             if (_ms.size() == 0) {
                 return _ms.end();
             }
-            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator it = _ms.begin();
-            while (it != _ms.end()) {
-                if (getPriority((*it)->tensor_name) == priority) {
-                    break;
-                }
-                it++;
+            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
+            e->priority = priority;
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
+            it = _ms.lower_bound(e);
+            if (it == _ms.end()) {
+                return it;
+            } else if ((*it)->priority != priority) {
+                return _ms.end();
+            } else {
+                BPS_CHECK_EQ((*it)->priority, priority);
+                return it;
             }
-            return it;
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
@@ -181,7 +162,7 @@ namespace byteps {
                 if (msit == _ms.end()) {
                     return nullptr;
                 }
-                BPS_LOG(INFO) << "expect " << (expected_priority);
+                BPS_LOG(INFO) << "expect " << expected_priority;
                 if (!_visited[expected_priority]) {
                     for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                         _mystack.push(expected_priority * -1);
@@ -201,6 +182,7 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _dequeue && _ms.size() > 0) {
+                BPS_LOG(INFO) << "prophet in size " << _ms.size();
                 if (_mystack.size() == 0) {
                     _dequeue = 0;
                     if (_pointer > 0) {
@@ -215,7 +197,6 @@ namespace byteps {
                     return nullptr;
                 }
                 task = *msit;
-                BPS_LOG(INFO) << "prophet _dequeue " << (task->tensor_name);
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
@@ -277,7 +258,6 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
-                    BPS_LOG(INFO) << "default " << (task->tensor_name);
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
