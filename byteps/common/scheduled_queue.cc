@@ -114,7 +114,7 @@ namespace byteps {
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
-            if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 int p = getPriority(entry->tensor_name);
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (p) << ")";
