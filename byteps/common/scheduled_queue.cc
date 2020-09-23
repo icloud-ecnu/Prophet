@@ -155,7 +155,7 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                return getPriority(x->tensor_name) == Priority;
+                return x->priority == Priority;
             }
         };
 
