@@ -117,7 +117,6 @@ namespace byteps {
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 int p = getPriority(entry->tensor_name);
-                entry->priority = p;
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (p) << ")";
                 _tensor_part[p * -1] = entry->total_partnum;
             } else {
@@ -163,18 +162,14 @@ namespace byteps {
             if (_ms.size() == 0) {
                 return _ms.end();
             }
-            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
-            e->priority = priority;
-            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
-            it = _ms.lower_bound(e);
-            if (it == _ms.end()) {
-                return it;
-            } else if ((*it)->priority != priority) {
-                return _ms.end();
-            } else {
-                BPS_CHECK_EQ((*it)->priority, priority);
-                return it;
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator = _ms.begin();
+            while (it != _ms.end()) {
+                if (getPriority(it->tensor_name) == priority) {
+                    break;
+                }
+                it++;
             }
+            return it;
         }
 
         std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
