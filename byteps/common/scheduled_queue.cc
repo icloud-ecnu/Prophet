@@ -109,7 +109,7 @@ namespace byteps {
         int BytePSScheduledQueue::getPriority(const std::string& s) {
             std::vector<std::string> ss;
             SplitString(s, ss, "_");
-            return ss[1];
+            return stoi(ss[1]);
         }
 
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
