@@ -232,6 +232,7 @@ namespace byteps {
                     for (int i = 0; i < 500; i++) {
                         _visited[i] = 0;
                     }
+                    BPS_LOG(INFO) << "reset";
                 }
                 task->ready_event = nullptr;
                 recorderTs(task);
@@ -260,6 +261,7 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
+                    BPS_LOG(INFO) << task->tensor_name;
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
