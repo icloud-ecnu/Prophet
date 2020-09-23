@@ -229,7 +229,7 @@ namespace byteps {
                     _sizepointer = 0;
                     _dooropen = _door;
                     _bps_credit = atoi(getenv("BPS_CREDIT"));
-                    for (int i = 0; i < 160; i++) {
+                    for (int i = 0; i < 500; i++) {
                         _visited[i] = 0;
                     }
                 }
