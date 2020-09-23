@@ -111,7 +111,7 @@ namespace byteps {
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 std::vector<std::string> ss;
-                SplitString(s, ss, "_");
+                SplitString(entry->tensor_name, ss, "_");
                 entry->priority = stoi(ss[1]);
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
