@@ -94,7 +94,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                BPS_LOG(INFO) << "add " << (entry->priority);
+                BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
                 _tensor_part[entry->priority * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
@@ -162,6 +162,7 @@ namespace byteps {
                 if (msit == _ms.end()) {
                     return nullptr;
                 }
+                BPS_LOG(INFO) << "expect " << (expected_priority);
                 if (!_visited[expected_priority]) {
                     for (int x = 0; x < _tensor_part[expected_priority]; x++) {
                         _mystack.push(expected_priority * -1);
@@ -195,6 +196,7 @@ namespace byteps {
                     return nullptr;
                 }
                 task = *msit;
+                BPS_LOG(INFO) << "prophet _dequeue " << (task->tensor_name) << " (p=" << (task->priority) << ")";
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
@@ -256,6 +258,7 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
+                    BPS_LOG(INFO) << "default " << (task->tensor_name) << " (p=" << (task->priority) << ")";
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
