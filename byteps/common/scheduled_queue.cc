@@ -157,6 +157,7 @@ namespace byteps {
             std::lock_guard <std::mutex> lock(_mutex);
             std::shared_ptr <TensorTableEntry> task;
             std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
+            BPS_LOG(INFO) << "_dequeue=" << _dequeue << ",_ms.size()=" << _ms.size() << ",expected_priority=" << expected_priority;
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
@@ -261,7 +262,7 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
-                    BPS_LOG(INFO) << task->tensor_name;
+                    // BPS_LOG(INFO) << task->tensor_name;
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
