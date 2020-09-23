@@ -17,7 +17,8 @@
 #include <algorithm>
 #include "global.h"
 #include "logging.h"
-
+#include <iterator>
+#include <regex>
 namespace byteps {
     namespace common {
 
