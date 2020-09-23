@@ -162,7 +162,7 @@ namespace byteps {
             if (_ms.size() == 0) {
                 return _ms.end();
             }
-            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator = _ms.begin();
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator it = _ms.begin();
             while (it != _ms.end()) {
                 if (getPriority(it->tensor_name) == priority) {
                     break;
