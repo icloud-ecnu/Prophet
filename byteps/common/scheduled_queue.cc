@@ -106,15 +106,19 @@ namespace byteps {
             v.push_back(s.substr(pos1));
         }
 
+        int BytePSScheduledQueue::getPriority(const std::string& s) {
+            std::vector<std::string> ss;
+            SplitString(entry->tensor_name, ss, "_");
+            return ss[1];
+        }
+
         void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
             std::lock_guard <std::mutex> lock(_mutex);
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
-                std::vector<std::string> ss;
-                SplitString(entry->tensor_name, ss, "_");
-                entry->priority = stoi(ss[1]);
-                BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (entry->priority) << ")";
-                _tensor_part[entry->priority * -1] = entry->total_partnum;
+                int p = getPriority(entry->tensor_name);
+                BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (p) << ")";
+                _tensor_part[p * -1] = entry->total_partnum;
             } else {
                 _sq.push_back(entry);
             }
@@ -150,7 +154,7 @@ namespace byteps {
             isTargetPriority(int priority) : Priority(priority) {}
 
             bool operator()(std::shared_ptr <TensorTableEntry> x) {
-                return x->priority == Priority;
+                return getPriority(x->tensor_name) == Priority;
             }
         };
 
@@ -215,7 +219,7 @@ namespace byteps {
                     return nullptr;
                 }
                 task = *msit;
-                BPS_LOG(INFO) << "prophet _dequeue " << (task->tensor_name) << " (p=" << (task->priority) << ")";
+                BPS_LOG(INFO) << "prophet _dequeue " << (task->tensor_name);
                 if (!_meetzero) {
                     if (dynamic_size > task->len) {
                         dynamic_size -= task->len;
@@ -277,7 +281,7 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
-                    BPS_LOG(INFO) << "default " << (task->tensor_name) << " (p=" << (task->priority) << ")";
+                    BPS_LOG(INFO) << "default " << (task->tensor_name);
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();

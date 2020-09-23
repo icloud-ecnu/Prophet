@@ -51,6 +51,8 @@ namespace byteps {
 
             void SplitString(const std::string& s, std::vector<std::string>& v, const std::string& c);
 
+            int getPriority(const std::string& s);
+
         private:
             struct comparator {
                 bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
