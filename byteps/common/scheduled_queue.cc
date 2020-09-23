@@ -174,6 +174,8 @@ namespace byteps {
                 }
                 if (expected_priority >= 0) {
                     expected_priority--;
+                } else {
+                    _dequeue = 1;
                 }
                 if (expected_priority == _grad_checkpoint[_pointer - 1]) {
                     _dequeue = 1;
