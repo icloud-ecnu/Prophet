@@ -160,6 +160,7 @@ namespace byteps {
             if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
                 msit = findTask(expected_priority * -1);
                 if (msit == _ms.end()) {
+                    BPS_LOG(INFO) << "empty";
                     return nullptr;
                 }
                 BPS_LOG(INFO) << "expect " << (expected_priority);
@@ -182,6 +183,7 @@ namespace byteps {
                 return nullptr;
             }
             if (_qt == PUSH && _dequeue && _ms.size() > 0) {
+                BPS_LOG(INFO) << "prophet, size=" << (_mystack.size());
                 if (_mystack.size() == 0) {
                     _dequeue = 0;
                     if (_pointer > 0) {
@@ -258,6 +260,7 @@ namespace byteps {
                     }
                     _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
+                    BPS_LOG(INFO) << "default, task=" << (task->tensor_name);
                     BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
