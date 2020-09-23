@@ -117,6 +117,7 @@ namespace byteps {
             if (_qt == PUSH && (entry->tensor_name).find("parameter") != (entry->tensor_name).npos) {
                 _ms.insert(entry);
                 int p = getPriority(entry->tensor_name);
+                entry->priority = p;
                 BPS_LOG(INFO) << "add " << (entry->tensor_name) << " (p=" << (p) << ")";
                 _tensor_part[p * -1] = entry->total_partnum;
             } else {
