@@ -108,7 +108,7 @@ namespace byteps {
 
         int BytePSScheduledQueue::getPriority(const std::string& s) {
             std::vector<std::string> ss;
-            SplitString(entry->tensor_name, ss, "_");
+            SplitString(s, ss, "_");
             return ss[1];
         }
 
