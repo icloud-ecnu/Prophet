@@ -23,7 +23,7 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-            _door = 8;
+            _door = 18;
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
@@ -217,8 +217,8 @@ namespace byteps {
             std::lock_guard<std::mutex> lock(_mutex);
             if (_qt == PUSH) {
                 _door += 1;
-                if (_door > 8) {
-                    _door = 8;
+                if (_door > 18) {
+                    _door = 18;
                 }
             }
             if (_is_scheduled) {
