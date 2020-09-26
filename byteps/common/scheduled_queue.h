@@ -20,38 +20,76 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include "common.h"
+#include <stack>
+#include <set>
+#include <stdio.h>
 #include <stdlib.h>
+#include "common.h"
 #include "ready_table.h"
 
 namespace byteps {
-namespace common {
+    namespace common {
+        class BytePSScheduledQueue {
+        public:
+            BytePSScheduledQueue(QueueType type);
 
-class BytePSScheduledQueue {
- public:
-  BytePSScheduledQueue(QueueType type);
-  QueueType getQueueType() { return _qt; }
-  void addTask(std::shared_ptr<TensorTableEntry>);
-  void recorderTs(std::shared_ptr<TensorTableEntry>);
-  std::shared_ptr<TensorTableEntry> getTask();
-  std::shared_ptr<TensorTableEntry> getTask(uint64_t key);
-  uint32_t pendingSize();
-  void reportFinish(int size);
+            QueueType getQueueType() { return _qt; }
 
- private:
-  // TODO: use priority queue or heap
-  std::vector<std::shared_ptr<TensorTableEntry>> _sq;
-  std::mutex _mutex;
-  uint64_t _credits;
-  bool _is_scheduled;
-  QueueType _qt;
-  ReadyTable *_rt;
-  int _credit = atoi(getenv("BPS_CREDIT"));
-  int _max_credit = atoi(getenv("BPS_CREDIT"));
-  int _door = 10;
-};
+            void addTask(std::shared_ptr <TensorTableEntry>);
 
-}  // namespace common
+            void recorderTs(std::shared_ptr <TensorTableEntry>);
+
+            std::shared_ptr <TensorTableEntry> getTask();
+
+            std::shared_ptr <TensorTableEntry> getTask(uint64_t key);
+
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator findTask(int priority);
+
+            uint32_t pendingSize();
+
+            void reportFinish(int size);
+
+        private:
+            struct comparator {
+                bool operator()(std::shared_ptr <TensorTableEntry> a, std::shared_ptr <TensorTableEntry> b) {
+                    return (a->priority > b->priority);
+                }
+            };
+            std::vector <std::shared_ptr<TensorTableEntry>> _sq;
+            std::multiset <std::shared_ptr<TensorTableEntry>, comparator> _ms;
+            std::vector <std::shared_ptr<TensorTableEntry>> _mysq;
+            std::stack<int> _mystack;
+            std::stack<int> _mystackpull;
+            std::mutex _mutex;
+            uint64_t _credits;
+            bool _is_scheduled;
+            int _tensor_part[500] = {0};
+            int _visited[500] = {0};
+            int _meetzero = 0;
+            int _dooropen = 11;
+            int _pulldoor = 0;
+            int batchsize = atoi(getenv("Z_BATCH_SIZE"));
+            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 100, 150, 200, 250, 300, 350, 400, 449};
+            int B = atoi(getenv("BPS_NET_B"));
+            int _door = atoi(getenv("BPS_DOORS"));
+            long long _bps_credit = atoi(getenv("BPS_CREDIT"));
+            long long _backward_exec[13] = {600, 250, 230, 350, 200, 260, 200, 250, 50,
+                                      40, 58, 15, 0};
+            int _exec_stage = 0;
+            int _noleftsize = 0;
+            int _sizepointer = 0;
+            int _stagepullnum = 0;
+            int _dequeue = 0;
+            int _pointer = 12;
+            int _stagestart = 1;
+            long long dynamic_size = 0;
+            int _pushsize = 0;
+            int _pullsize = 0;
+            int expected_priority = _grad_checkpoint[_pointer];
+            QueueType _qt;
+            ReadyTable *_rt;
+        };
+    }  // namespace common
 }  // namespace byteps
 
 #endif  // BYTEPS_SCHEDULED_QUEUE_H
