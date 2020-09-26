@@ -23,7 +23,7 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-            _door = 5;
+            _door = 8;
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
@@ -80,7 +80,6 @@ namespace byteps {
         void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
             std::lock_guard<std::mutex> lock(_mutex);
             _sq.push_back(entry);
-            if (_is_scheduled) {
                 // TODO: below can be optimized to O(n) using insertion sort
                 std::sort(
                         _sq.begin(), _sq.end(),
@@ -91,7 +90,6 @@ namespace byteps {
                             }
                             return (a->priority > b->priority);  // from higher priority to lower
                         });
-            }
             BPS_CHECK(entry->tensor_name != "");
             BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
                            << " addTask: " << entry->tensor_name << " key: " << entry->key
@@ -219,8 +217,8 @@ namespace byteps {
             std::lock_guard<std::mutex> lock(_mutex);
             if (_qt == PUSH) {
                 _door += 1;
-                if (_door > 5) {
-                    _door = 5;
+                if (_door > 8) {
+                    _door = 8;
                 }
             }
             if (_is_scheduled) {
