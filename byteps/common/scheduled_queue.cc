@@ -23,7 +23,14 @@ namespace byteps {
 
         BytePSScheduledQueue::BytePSScheduledQueue(QueueType type) {
 
-            _door = 88;
+            B *= 125;
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] *= (int)((double)batchsize/64);
+            }
+            for (int i = 0; i < 13; i++) {
+                _backward_exec[i] *= B;
+            }
+
             if (type == REDUCE && BytePSGlobal::GetNccl()->IsSignalRoot()) {
                 _is_scheduled = true;
             } else {
@@ -31,10 +38,10 @@ namespace byteps {
             }
 
             size_t credit_in_partition = BytePSGlobal::GetNccl()->GetGroupSize() + 1;
-
-            auto byteps_scheduling_credit = getenv("BYTEPS_SCHEDULING_CREDIT");
-            credit_in_partition = byteps_scheduling_credit ? atoi(byteps_scheduling_credit) : 0;
-            if (!credit_in_partition) { // disable scheduling by default
+            if (getenv("BYTEPS_SCHEDULING_CREDIT")) {
+                credit_in_partition = atoi(getenv("BYTEPS_SCHEDULING_CREDIT"));
+            }
+            if (!credit_in_partition) {
                 _is_scheduled = false;
             }
 
@@ -72,35 +79,34 @@ namespace byteps {
                         _rt = BytePSGlobal::GetBroadcastTable();
                     }
                     break;
+
+                case PULL:
+                    if (BytePSGlobal::IsRootDevice()) {
+                        _rt = BytePSGlobal::GetPullTable();
+                    }
+                    break;
                 default:
                     break;
             }
         }
 
-        void BytePSScheduledQueue::addTask(std::shared_ptr<TensorTableEntry> entry) {
-            std::lock_guard<std::mutex> lock(_mutex);
-            _sq.push_back(entry);
-                // TODO: below can be optimized to O(n) using insertion sort
-                std::sort(
-                        _sq.begin(), _sq.end(),
-                        [](std::shared_ptr<TensorTableEntry> a,
-                           std::shared_ptr<TensorTableEntry> b) {
-                            if (a->priority == b->priority) {
-                                return (a->key < b->key);  // from the first partition to the last
-                            }
-                            return (a->priority > b->priority);  // from higher priority to lower
-                        });
+        void BytePSScheduledQueue::addTask(std::shared_ptr <TensorTableEntry> entry) {
+            std::lock_guard <std::mutex> lock(_mutex);
+            if (_qt == PUSH && (entry->tensor_name).find("gradient") != (entry->tensor_name).npos) {
+                _ms.insert(entry);
+                _tensor_part[entry->priority * -1] = entry->total_partnum;
+            } else {
+                _sq.push_back(entry);
+            }
             BPS_CHECK(entry->tensor_name != "");
-            BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+            BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                            << " addTask: " << entry->tensor_name << " key: " << entry->key
                            << " rank: " << BytePSGlobal::GetLocalRank();
             return;
         }
 
-// Record the start time of the sub-tasks for all QueueTypes of each partition.
-        void BytePSScheduledQueue::recorderTs(std::shared_ptr<TensorTableEntry> task) {
+        void BytePSScheduledQueue::recorderTs(std::shared_ptr <TensorTableEntry> task) {
             auto context = task->context;
-            // add for profiling
             if (context->profile_flag) {
                 auto now = std::chrono::system_clock::now();
                 auto duration = now.time_since_epoch();
@@ -111,97 +117,176 @@ namespace byteps {
                 auto this_op = queue_list[0];
 
                 BPSCommTime *ret = new BPSCommTime;
-                ret->start_t = (long long)(us.count());
+                ret->start_t = (long long) (us.count());
                 ret->key = task->key;
                 ret->type = this_op;
                 context->part_comm_time[task->key][this_op].push(ret);
             }
         }
 
-        std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask() {
-            std::lock_guard<std::mutex> lock(_mutex);
-            std::shared_ptr<TensorTableEntry> task;
-            // TODO: below can be optimized -- if we take task from the tail, erase() can
-            // be faster
-            for (auto it = _sq.begin(); it != _sq.end(); ++it) {
-                if ((*it)->ready_event) {
-                    if (!(*it)->ready_event->Ready()) {
-                        continue;
-                    }
+        struct isTargetPriority {
+            int Priority;
+
+            isTargetPriority(int priority) : Priority(priority) {}
+
+            bool operator()(std::shared_ptr <TensorTableEntry> x) {
+                return x->priority == Priority;
+            }
+        };
+
+        std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator BytePSScheduledQueue::findTask(int priority) {
+            if (_ms.size() == 0) {
+                return _ms.end();
+            }
+            std::shared_ptr<TensorTableEntry> e(new TensorTableEntry);
+            e->priority = priority;
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator
+            it = _ms.lower_bound(e);
+            if (it == _ms.end()) {
+                return it;
+            } else if ((*it)->priority != priority) {
+                return _ms.end();
+            } else {
+                BPS_CHECK_EQ((*it)->priority, priority);
+                return it;
+            }
+        }
+
+        std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask() {
+            std::lock_guard <std::mutex> lock(_mutex);
+            std::shared_ptr <TensorTableEntry> task;
+            std::multiset < std::shared_ptr < TensorTableEntry >> ::iterator msit;
+            if (_qt == PUSH && !_dequeue && _ms.size() > 0) {
+                msit = findTask(expected_priority * -1);
+                if (msit == _ms.end()) {
+                    return nullptr;
                 }
-                if (_is_scheduled) {
-                    if ((*it)->len > _credits) {
-                        continue;
-                    }
-                }
-                if (_rt) {
-                    if (!_rt->IsKeyReady((*it)->key)) {
-                        continue;
-                    }
-                    _rt->ClearReadyCount((*it)->key);
-                }
-                task = *it;
-                if (_qt == PUSH && (task->tensor_name).find("gradient") != (task->tensor_name).npos) {
-//                    BPS_LOG(INFO) << _credit << " --- " << task->len    << "(" << task->priority << ")";
-                    if (_door > 0) {
-                        _door -= 1;
-//                        BPS_LOG(INFO) << _credit << " left.";
-                        _sq.erase(it);
-                        if (_is_scheduled) {
-                            _credits -= task->len;
+                if (!_visited[expected_priority]) {
+                    for (int x = 0; x < _tensor_part[expected_priority]; x++) {
+                        _mystack.push(expected_priority * -1);
+                        if (expected_priority == 0) {
+                            _meetzero = 1;
                         }
-                        BPS_CHECK(task->tensor_name != "");
-                        BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
-                                       << " getTask: " << task->tensor_name << " key: " << task->key
-                                       << " rank: " << BytePSGlobal::GetLocalRank();
-                        task->ready_event = nullptr;
-                        // Add for profiling communication traces
-                        recorderTs(task);
-                        return task;
+                    }
+                    _visited[expected_priority] = 1;
+                }
+                if (expected_priority >= 0) {
+                    expected_priority--;
+                }
+                if (expected_priority == _grad_checkpoint[_pointer - 1]) {
+                    _dequeue = 1;
+                    dynamic_size = _backward_exec[_sizepointer++];
+                }
+                return nullptr;
+            }
+            if (_qt == PUSH && _dequeue && _ms.size() > 0) {
+                if (_mystack.size() == 0) {
+                    _dequeue = 0;
+                    if (_pointer > 0) {
+                        _pointer--;
+                    }
+                    _stagestart = 1;
+                    BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
+                    return nullptr;
+                }
+                msit = findTask(_mystack.top());
+                if (msit == _ms.end()) {
+                    return nullptr;
+                }
+                task = *msit;
+                if (!_meetzero) {
+                    if (dynamic_size > task->len) {
+                        dynamic_size -= task->len;
+                        _ms.erase(msit);
+                        _mystack.pop();
                     } else {
-//                        BPS_LOG(INFO) << "no space.";
+                        _dequeue = 0;
+                        if (_pointer > 0) {
+                            _pointer--;
+                        }
+                        _stagestart = 1;
+                        BytePSGlobal::pushsize[_sizepointer] = _mystack.top() + 1;
                         return nullptr;
                     }
-                } else {
-                    _sq.erase(it);
+                } else if (_bps_credit < task -> len) {
+                    return nullptr;
+                } else if (_bps_credit > task->len) {
+                    _bps_credit -= task->len;
+                    _ms.erase(msit);
+                    _mystack.pop();
+                }
+                if (_mystack.empty() && _meetzero) {
+                    _dequeue = 0;
+                    _pointer = 12;
+                    expected_priority = _grad_checkpoint[_pointer];
+                    _stagestart = 1;
+                    _meetzero = 0;
+                    _sizepointer = 0;
+                    _dooropen = _door;
+                    _bps_credit = atoi(getenv("BPS_CREDIT"));
+                    for (int i = 0; i < 500; i++) {
+                        _visited[i] = 0;
+                    }
+                }
+                task->ready_event = nullptr;
+                recorderTs(task);
+                return task;
+            } else {
+                for (auto it = _sq.begin(); it != _sq.end(); ++it) {
+
+                    if ((*it)->ready_event) {
+                        if (!(*it)->ready_event->Ready()) {
+                            continue;
+                        }
+                    }
+                    if (_is_scheduled) {
+                        if ((*it)->len > _credits)
+                            continue;
+                    }
+                    if (_rt) {
+                        if (!_rt->IsKeyReady((*it)->key)) {
+                            continue;
+                        }
+                        _rt->ClearReadyCount((*it)->key);
+                    }
+                    task = *it;
                     if (_is_scheduled) {
                         _credits -= task->len;
                     }
+                    _sq.erase(it);
                     BPS_CHECK(task->tensor_name != "");
-                    BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+                    BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                    << " getTask: " << task->tensor_name << " key: " << task->key
                                    << " rank: " << BytePSGlobal::GetLocalRank();
                     task->ready_event = nullptr;
-                    // Add for profiling communication traces
                     recorderTs(task);
                     return task;
                 }
             }
+
             return nullptr;
         }
 
-
-        std::shared_ptr<TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
+        std::shared_ptr <TensorTableEntry> BytePSScheduledQueue::getTask(uint64_t key) {
             BPS_CHECK(!_is_scheduled);
-            std::lock_guard<std::mutex> lock(_mutex);
-            std::shared_ptr<TensorTableEntry> task;
+            std::lock_guard <std::mutex> lock(_mutex);
+            std::shared_ptr <TensorTableEntry> task;
             for (auto it = _sq.begin(); it != _sq.end(); ++it) {
                 if ((*it)->ready_event) {
                     BPS_CHECK((*it)->ready_event->Ready());
                 }
-                if ((*it)->key != (uint64_t)key) {
+                if ((*it)->key != (uint64_t) key) {
                     continue;
                 }
                 task = *it;
                 _sq.erase(it);
 
                 BPS_CHECK(task->tensor_name != "");
-                BPS_LOG(TRACE) << "Queue " << LogStrings[_qt]
+                BPS_LOG(DEBUG) << "Queue " << LogStrings[_qt]
                                << " getTask(key): " << task->tensor_name
                                << " key: " << task->key
                                << " rank: " << BytePSGlobal::GetLocalRank();
                 task->ready_event = nullptr;
-                // Add for profiling communication traces
                 recorderTs(task);
                 return task;
             }
@@ -209,20 +294,17 @@ namespace byteps {
         }
 
         uint32_t BytePSScheduledQueue::pendingSize() {
-            std::lock_guard<std::mutex> lock(_mutex);
+            std::lock_guard <std::mutex> lock(_mutex);
             return _sq.size();
         }
 
         void BytePSScheduledQueue::reportFinish(int size) {
-            std::lock_guard<std::mutex> lock(_mutex);
-            if (_qt == PUSH) {
-                _door += 1;
-                if (_door > 88) {
-                    _door = 88;
-                }
-            }
+            std::lock_guard <std::mutex> lock(_mutex);
             if (_is_scheduled) {
                 _credits += size;
+            }
+            if (_qt == PUSH && size > 0 && _meetzero) {
+                _bps_credit += size;
             }
             return;
         }
