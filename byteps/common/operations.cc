@@ -223,7 +223,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   auto now = std::chrono::system_clock::now();
   auto duration = now.time_since_epoch();
   auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(INFO) << (long long) (us.count())
+  BPS_LOG(INFO) << (long long) (us.count());;;
 
   BPS_CHECK_GT(size, 0) << "init tensor size not larger than 0";
   // Get metadata
@@ -250,7 +250,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   now = std::chrono::system_clock::now();
   duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(INFO) << (long long) (us.count())
+  BPS_LOG(INFO) << (long long) (us.count());;;
   BPS_LOG(INFO) << name << " partitioned to " << context.key_list.size()
                  << " part(s)"
                  << ", total_len=" << size << ", key_range=["
@@ -268,7 +268,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   now = std::chrono::system_clock::now();
   duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(INFO) << (long long) (us.count())
+  BPS_LOG(INFO) << (long long) (us.count());;;
   BPS_LOG(INFO) << "Begin init " << name << ", size=" << size
                  << ", parts=" << key_list.size();
 
@@ -293,7 +293,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   now = std::chrono::system_clock::now();
   duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(INFO) << (long long) (us.count())
+  BPS_LOG(INFO) << (long long) (us.count());;;
   BPS_LOG(INFO) << name << ": open shared memory size " << size;
 
   // Init tensors with BytePS server
@@ -328,7 +328,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   now = std::chrono::system_clock::now();
   duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(INFO) << (long long) (us.count())
+  BPS_LOG(INFO) << (long long) (us.count());;;
   BPS_LOG(INFO) << "Finish Init " << name << ", size=" << size
                  << ", parts=" << key_list.size();
 }
