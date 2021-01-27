@@ -220,8 +220,9 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   }
   CUDA_CALL(cudaSetDevice(BytePSGlobal::GetLocalRank()));
 
-  auto us;
-  us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
+  auto now = std::chrono::system_clock::now();
+  auto duration = now.time_since_epoch();
+  auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
   BPS_LOG(INFO) << (long long) (us.count())
 
   BPS_CHECK_GT(size, 0) << "init tensor size not larger than 0";
@@ -246,6 +247,8 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
     accumulated +=
         ((size - accumulated) > bound) ? bound : (size - accumulated);
   }
+  now = std::chrono::system_clock::now();
+  duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
   BPS_LOG(INFO) << (long long) (us.count())
   BPS_LOG(INFO) << name << " partitioned to " << context.key_list.size()
@@ -262,6 +265,8 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
                (unsigned int)(size + bound - 1) / bound)  // round up
       << key_list.size() << ", size=" << size << ", bound=" << bound;
 
+  now = std::chrono::system_clock::now();
+  duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
   BPS_LOG(INFO) << (long long) (us.count())
   BPS_LOG(INFO) << "Begin init " << name << ", size=" << size
@@ -285,6 +290,8 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
     context.cpubuff = shm_obj->openSharedMemory(std::string("BytePS_ShM_"),
                                                 key_list[0], size);
   }
+  now = std::chrono::system_clock::now();
+  duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
   BPS_LOG(INFO) << (long long) (us.count())
   BPS_LOG(INFO) << name << ": open shared memory size " << size;
@@ -318,6 +325,8 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
 
   context.initialized = true;
 
+  now = std::chrono::system_clock::now();
+  duration = now.time_since_epoch();
   us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
   BPS_LOG(INFO) << (long long) (us.count())
   BPS_LOG(INFO) << "Finish Init " << name << ", size=" << size
