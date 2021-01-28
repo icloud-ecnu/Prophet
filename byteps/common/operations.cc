@@ -220,11 +220,6 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
   }
   CUDA_CALL(cudaSetDevice(BytePSGlobal::GetLocalRank()));
 
-  auto now = std::chrono::system_clock::now();
-  auto duration = now.time_since_epoch();
-  auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(TRACE) << (long long) (us.count());;;
-
   BPS_CHECK_GT(size, 0) << "init tensor size not larger than 0";
   // Get metadata
   auto bound = BytePSGlobal::GetPartitionBound();
@@ -247,11 +242,7 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
     accumulated +=
         ((size - accumulated) > bound) ? bound : (size - accumulated);
   }
-  now = std::chrono::system_clock::now();
-  duration = now.time_since_epoch();
-  us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(TRACE) << (long long) (us.count());;;
-  BPS_LOG(TRACE) << name << " partitioned to " << context.key_list.size()
+  BPS_LOG(DEBUG) << name << " partitioned to " << context.key_list.size()
                  << " part(s)"
                  << ", total_len=" << size << ", key_range=["
                  << context.key_list.front() << ", " << context.key_list.back()
@@ -265,10 +256,6 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
                (unsigned int)(size + bound - 1) / bound)  // round up
       << key_list.size() << ", size=" << size << ", bound=" << bound;
 
-  now = std::chrono::system_clock::now();
-  duration = now.time_since_epoch();
-  us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(TRACE) << (long long) (us.count());;;
   BPS_LOG(TRACE) << "Begin init " << name << ", size=" << size
                  << ", parts=" << key_list.size();
 
@@ -290,10 +277,6 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
     context.cpubuff = shm_obj->openSharedMemory(std::string("BytePS_ShM_"),
                                                 key_list[0], size);
   }
-  now = std::chrono::system_clock::now();
-  duration = now.time_since_epoch();
-  us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(TRACE) << (long long) (us.count());;;
   BPS_LOG(TRACE) << name << ": open shared memory size " << size;
 
   // Init tensors with BytePS server
@@ -325,10 +308,6 @@ void InitTensor(BPSContext &context, size_t size, int dtype, void *cpubuff) {
 
   context.initialized = true;
 
-  now = std::chrono::system_clock::now();
-  duration = now.time_since_epoch();
-  us = std::chrono::duration_cast<std::chrono::microseconds>(duration);
-  BPS_LOG(TRACE) << (long long) (us.count());;;
   BPS_LOG(TRACE) << "Finish Init " << name << ", size=" << size
                  << ", parts=" << key_list.size();
 }
