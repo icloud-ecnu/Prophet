@@ -199,7 +199,7 @@ inline void PostNcclCalls(
   auto nccl_size = nccl->GetSize();
   auto nccl_rank = nccl->GetRank(key, this_op);
 
-  auto num_elem_per_gpu = len / nccl_size / unit_len;
+  auto num_elem_per_gpu = 1; // auto num_elem_per_gpu = 1;
   auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
   if (BytePSGlobal::IsUsingReduce()) {
     nccl_root = BytePSGlobal::GetReduceRootByKey(key);
@@ -400,7 +400,7 @@ bool RunCopyDevice2HostLoopOnce() {
     BPS_CHECK(cpubuff) << task->tensor_name
                        << ": CPU buffer not initialized, size=" << len;
 
-    auto num_elem_per_gpu = len / nccl_size / unit_len;
+    auto num_elem_per_gpu = 1; // auto num_elem_per_gpu = len / nccl_size / unit_len;
     auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
 
     auto copy_offset = nccl_rank * num_elem_per_gpu * unit_len;
@@ -457,7 +457,7 @@ bool RunPcieReduceLoopOnce() {
       auto nccl_size = nccl->GetSize();
       auto nccl_rank = nccl->GetRank(key, REDUCE);
 
-      auto num_elem_per_gpu = len / nccl_size / unit_len;
+      auto num_elem_per_gpu = 1; // auto num_elem_per_gpu = len / nccl_size / unit_len;
       auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
 
       auto copy_len = num_elem_per_gpu * unit_len;
@@ -578,7 +578,7 @@ void CopyHost2Device(std::shared_ptr<byteps::common::TensorTableEntry> task) {
   }
 
   auto unit_len = tensor->size() / tensor->shape().num_elements();
-  auto num_elem_per_gpu = len / nccl_size / unit_len;
+  auto num_elem_per_gpu = 1; // auto num_elem_per_gpu = len / nccl_size / unit_len;
   auto left_elem = (len / unit_len) - (num_elem_per_gpu * nccl_size);
 
   auto copy_offset = nccl_rank * num_elem_per_gpu * unit_len;
