@@ -63,18 +63,18 @@ namespace byteps {
             std::mutex _mutex;
             uint64_t _credits;
             bool _is_scheduled;
-            int _tensor_part[500] = {0};
-            int _visited[500] = {0};
+            int _tensor_part[160] = {0};
+            int _visited[160] = {0};
             int _meetzero = 0;
             int _dooropen = 11;
             int _pulldoor = 0;
             int batchsize = atoi(getenv("Z_BATCH_SIZE"));
-            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 100, 180, 250, 320, 400, 462};
+            int _grad_checkpoint[13] = {-1, 9, 22, 35, 50, 62, 77, 90, 103, 117, 130, 143, 156};
             int B = atoi(getenv("BPS_NET_B"));
             int _door = atoi(getenv("BPS_DOORS"));
             long long _bps_credit = atoi(getenv("BPS_CREDIT"));
-            long long _backward_exec[13] = {47, 46, 26, 30, 37, 53, 44, 64, 90,
-                                      74, 58, 15, 0};
+            long long _backward_exec[13] = {16, 15, 9, 10, 12, 18, 15, 21, 30,
+                                      25, 20, 5, 0};
             int _exec_stage = 0;
             int _noleftsize = 0;
             int _sizepointer = 0;
