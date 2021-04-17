@@ -21,8 +21,9 @@
 #include <immintrin.h>
 #endif
 
-#include <memory>
 #include <cstring>
+#include <memory>
+
 #include "common.h"
 #include "logging.h"
 
@@ -54,10 +55,7 @@ class CpuReducer {
   std::shared_ptr<BytePSComm> getComm() { return _comm; }
 #endif
 
-
-  DataType GetDataType(int dtype) {
-    return static_cast<DataType>(dtype);
-  }
+  DataType GetDataType(int dtype) { return static_cast<DataType>(dtype); }
 
  private:
 #if __AVX__ && __F16C__

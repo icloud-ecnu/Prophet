@@ -17,6 +17,7 @@
 #define BYTEPS_OPERATIONS_H
 
 #include <functional>
+
 #include "common.h"
 
 namespace byteps {

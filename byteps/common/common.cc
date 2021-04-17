@@ -14,10 +14,11 @@
 // limitations under the License.
 // =============================================================================
 
+#include "common.h"
+
 #include <cassert>
 #include <sstream>
 
-#include "common.h"
 #include "logging.h"
 
 namespace byteps {

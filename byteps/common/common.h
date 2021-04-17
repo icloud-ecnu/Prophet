@@ -31,13 +31,14 @@
 #include <vector>
 
 // Add for profiling communication events
-#include <fstream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
-#include <thread>
+
 #include <chrono>
+#include <fstream>
+#include <iostream>
 #include <queue>
+#include <thread>
 
 namespace byteps {
 namespace common {
@@ -173,11 +174,13 @@ typedef struct BytePSContext {
   std::vector<void*> pcie_cpubuff;
   size_t buff_len;
   // Used for profiling communication events
-  std::queue<BPSCommTime *> comm_time;
+  std::queue<BPSCommTime*> comm_time;
   bool profile_flag = false;
   int step_cnt = 0;
   int local_rank = 0;
-  std::unordered_map<uint64_t, std::unordered_map<int, std::queue<BPSCommTime *>>> part_comm_time;
+  std::unordered_map<uint64_t,
+                     std::unordered_map<int, std::queue<BPSCommTime*>>>
+      part_comm_time;
 } BPSContext;
 
 class Tensor {

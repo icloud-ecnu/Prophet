@@ -23,7 +23,6 @@ namespace byteps {
 namespace common {
 
 CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm) {
-
 #ifndef BYTEPS_BUILDING_SERVER
   std::vector<int> peers;
   auto pcie_size = BytePSGlobal::GetPcieSwitchSize();
@@ -33,8 +32,7 @@ CpuReducer::CpuReducer(std::shared_ptr<BytePSComm> comm) {
   }
   if (comm) {
     _comm = std::make_shared<BytePSCommSocket>(comm, std::string("cpu"), peers);
-  }
-  else {
+  } else {
     _comm = nullptr;
   }
 #endif
@@ -82,7 +80,7 @@ int CpuReducer::sum(void* dst, void* src, size_t len, DataType dtype) {
       BPS_CHECK(0) << "Unsupported data type: " << dtype;
   }
   return 0;
-}  
+}
 
 template <typename T>
 int CpuReducer::_sum(T* dst, T* src, size_t len) {
@@ -220,7 +218,6 @@ int CpuReducer::copy(void* dst, void* src, size_t len) {
   }
   return 0;
 }
-
 
 }  // namespace common
 }  // namespace byteps

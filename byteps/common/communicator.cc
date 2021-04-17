@@ -14,8 +14,10 @@
 // =============================================================================
 
 #include "communicator.h"
+
 #include <cerrno>
 #include <cstring>
+
 #include "global.h"
 #include "logging.h"
 
@@ -146,7 +148,7 @@ int BytePSCommSocket::initSocket(int rank, const std::string& path) {
 
   // set recv timeout value for socket
   struct timeval tv;
-  tv.tv_sec = 3; // in seconds
+  tv.tv_sec = 3;  // in seconds
   tv.tv_usec = 0;
   setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
@@ -168,9 +170,11 @@ void BytePSCommSocket::startListenThread() {  // only root starts this in
     while (true) {
       rc = recv(_recv_fd, buffer, sizeof(buffer), MSG_WAITALL);
       if (rc < 0 && errno == EINTR) continue;
-      if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) { // timeout
-        if (BytePSGlobal::ShouldShutdown()) break; // on exit
-        else continue; // normal timeout
+      if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {  // timeout
+        if (BytePSGlobal::ShouldShutdown())
+          break;  // on exit
+        else
+          continue;  // normal timeout
       }
       BPS_CHECK_GE(rc, 0) << std::strerror(errno) << ", rank=" << _local_rank;
       break;
@@ -200,7 +204,7 @@ void BytePSCommSocket::startListenThread() {  // only root starts this in
                    << ", signal=" << message.signal << ", key=" << message.key
                    << ", myrank=" << _local_rank;
   }
-  BPS_LOG(DEBUG) << "listen thread joined" 
+  BPS_LOG(DEBUG) << "listen thread joined"
                  << " (rank=" << _local_rank << ")";
 }
 
@@ -237,9 +241,11 @@ int BytePSCommSocket::recvSignal(int* source, void* data, int max_len) {
   while (true) {
     rc = recv(_recv_fd, data, MAX_LINE, MSG_WAITALL);
     if (rc < 0 && errno == EINTR) continue;
-    if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) { // timeout
-        if (BytePSGlobal::ShouldShutdown()) break; // on exit
-        else continue; // normal timeout
+    if (rc < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {  // timeout
+      if (BytePSGlobal::ShouldShutdown())
+        break;  // on exit
+      else
+        continue;  // normal timeout
     }
     BPS_CHECK_GE(rc, 0) << std::strerror(errno) << ", rank=" << _local_rank;
     BPS_CHECK_LE(rc, max_len)

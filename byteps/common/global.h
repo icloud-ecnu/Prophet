@@ -24,6 +24,7 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
+
 #include "common.h"
 #include "communicator.h"
 #include "cpu_reducer.h"
@@ -109,15 +110,16 @@ class BytePSGlobal {
 
   // for non-root
   static ReadyTable* GetCopyTable() { return _copy_table; }
-  
-  static int pushsize[20] ; 
+
+  static int pushsize[20];
   static std::shared_ptr<NcclManager> GetNccl() { return _nccl_manager; }
   static std::shared_ptr<CpuReducer> GetCpuReducer() { return _cpu_reducer; }
 
   static bool IsTensorSampled(uint64_t key) { return (key == _sample_key); }
 
-  static void SetProfileFlag(BPSContext *ctxt);
-  static void EmitTrace(std::ostream *os, const BPSCommTime *ret, BPSContext *ctxt);
+  static void SetProfileFlag(BPSContext* ctxt);
+  static void EmitTrace(std::ostream* os, const BPSCommTime* ret,
+                        BPSContext* ctxt);
   static void OutputTraces();
   static bool IsAllTensorOutput(const std::string& name);
   static void Who2beOutput(const std::string& name);
@@ -161,8 +163,6 @@ class BytePSGlobal {
   static int _end_step;
   static std::string _trace_dir;
 
-
-
   static cudaStream_t* _copy_device2host_stream;
   static cudaStream_t* _copy_host2device_stream;
 
@@ -191,7 +191,7 @@ class BytePSGlobal {
   static int AlignTo(int input, int alignment) {
     return input / alignment * alignment;
   }
-  
+
   // hash functions
   static std::string _hash_knob;
   static std::hash<std::string> _built_in_hash_fn;

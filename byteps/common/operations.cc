@@ -14,11 +14,14 @@
 // =============================================================================
 
 #include "operations.h"
+
 #include <cuda_runtime.h>
+#include <unistd.h>
+
 #include <cstring>
 #include <memory>
 #include <thread>
-#include <unistd.h>
+
 #include "core_loops.h"
 #include "global.h"
 #include "logging.h"
